@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "concurrently \"npm:dev:next\" \"npm:dev:server\"",
     "dev:next": "next dev",
-    "dev:server": "ts-node-dev --respawn --transpile-only src/backend/server.ts",
+    "dev:server": "ts-node-dev --project tsconfig.worker.json --respawn --transpile-only worker/server.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

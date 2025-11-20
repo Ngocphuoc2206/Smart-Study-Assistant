@@ -12,3 +12,6 @@ export const errorHandler = (
     const message = err.message || "Something went wrong";
     res.status(status).json({ success: true, message });
 }
+
+export default errorHandler;
+

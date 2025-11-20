@@ -1,0 +1,69 @@
+import { Schema, model, Document, Types } from 'mongoose';
+
+export type ScheduleType = 'lecture' | 'exam' | 'other';
+
+export interface ISchedule extends Document {
+    user: Types.ObjectId;
+    course: Types.ObjectId;
+    title: String; // – example “Lý thuyết chương 1”
+    type: ScheduleType;
+    startTime: Date;
+    endTime?: Date;
+    location?: String;
+    notes?: String;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// Create Schema
+const schedueSchema = new Schema<ISchedule>({
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: [true, 'User is required'],
+    
+    },
+    course: {
+        type: Schema.Types.ObjectId,
+        ref: 'Course',
+        required: [true, 'Course is required'],
+    },
+    title: {
+        type: String,
+        required: [true, 'Title is required'],
+        trim: true,
+        maxlength: [100, 'Title cannot be more than 100 characters'],
+    },
+    type: {
+        type: String,
+        enum: ['lecture', 'exam', 'other'],
+        default: 'lecture',
+    },
+    startTime: {
+        type: Date,
+        required: [true, 'Start time is required'],
+    },
+    endTime: {
+        type: Date,
+    },
+    location: {
+        type: String,
+        trim: true,
+    },
+    notes: {
+        type: String,
+        trim: true,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now,
+    }
+}, {
+    timestamps: true,
+});
+
+export const Schedule = model<ISchedule>('Schedule', schedueSchema);

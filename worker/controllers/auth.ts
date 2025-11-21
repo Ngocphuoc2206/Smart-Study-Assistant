@@ -90,7 +90,7 @@ export const login = async(req: Request, res: Response) => {
             });
         }
         //Assign token
-        const accessToken = await signAccessToken({userId: existingUser._id.toString(), role: existingUser.role});
+        const accessToken = signAccessToken({userId: existingUser._id.toString(), role: existingUser.role});
         logDebug("User logged in with data: ", existingUser);
         return res.status(200).json({
             success: true,

@@ -4,11 +4,13 @@ import { connectDB } from "./config/db";
 import fs from "fs";
 import morgan from "morgan";
 import path from "path";
-
 import dotenv from "dotenv";
+import bodyParser from "body-parser";
+
 import authMiddleware from "./middlewares/authMiddleware";
 import errorHandler from "./middlewares/error";
 import requestId from "./middlewares/requestID";
+import authRouter from "./routes/auth";
 
 //Configure env from file env
 dotenv.config();
@@ -20,6 +22,8 @@ export const createApp = async () => {
   const app = express();
   //Parsing request body
   app.use(express.json());
+  app.use(bodyParser.urlencoded({ extended: true }));
+
 
   // Createing and assigning a log file
   var accessLogStream = fs.createWriteStream(path.join(__dirname, "..", "access.log"), {
@@ -32,6 +36,9 @@ export const createApp = async () => {
   app.use(requestId);
   app.use(authMiddleware);
   app.use(errorHandler);
+
+  //Route
+  app.use("/api/auth", authRouter);
 
   app.get("/api/version", (req, res) => {
     res.json({

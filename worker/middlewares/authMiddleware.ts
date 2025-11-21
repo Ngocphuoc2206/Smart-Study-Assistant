@@ -1,23 +1,37 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import { verifyAccessToken } from "../utils/jwt";
+import { success } from "zod";
+
+const EXCEPT_PATHS = [
+  "/api/auth/login", 
+  "/api/auth/register"
+];
 
 export interface AuthRequest extends Request {
-  user?: any;
+  user?: {
+    userId: string;
+  };
 }
 
-export default function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (EXCEPT_PATHS.includes(req.path)) {
+    return next();
+  }
+
   const authHeader = req.headers.authorization;
-
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
+  const token = authHeader.split(" ")[1];
   try {
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    req.user = decoded;
+    const decoded = verifyAccessToken(token);
+    req.user = { userId: decoded.userId };
     next();
-  } catch (err) {
-    return res.status(401).json({ success: false, message: "Token không hợp lệ" });
+  } catch (error) {
+    return res.status(401).json({success: false, message: "Token not valid" });
   }
+
 }
+
+export default authMiddleware;

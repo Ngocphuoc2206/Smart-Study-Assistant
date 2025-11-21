@@ -3,7 +3,6 @@ import bcrypt from "bcrypt";
 import { User } from "../models/user";
 import { signAccessToken } from "../utils/jwt";
 import { logDebug } from "../utils/logger";
-import { success } from "zod";
 import { AuthRequest } from "../middlewares/authMiddleware";
 
 const SALT_ROUNDS = 10;
@@ -29,8 +28,6 @@ export const register = async(req: Request, res: Response) => {
 
         //Hash Password
         const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-        logDebug("Password hash: ", passwordHash);
-
         //Create New User
         const newUser = await User.create({
             firstName,
@@ -41,7 +38,7 @@ export const register = async(req: Request, res: Response) => {
         });
 
         // Assign token
-        const accessToken = await signAccessToken({ userId: newUser._id.toString(), role: newUser.role });
+        const accessToken = signAccessToken({ userId: newUser._id.toString(), role: newUser.role });
         logDebug("New user registered with data: ", newUser)
         return res.status(201).json({
             success: true,

@@ -7,7 +7,7 @@ export const ok = (res: Response, data: any, message = "Success") => {
 };
 
 // CREATED
-export const crated = (res: Response, data: any, message = "Success") => {
+export const created = (res: Response, data: any, message = "Success") => {
   return res.status(StatusCodes.CREATED).json({ success: true, message, data });
 };
 

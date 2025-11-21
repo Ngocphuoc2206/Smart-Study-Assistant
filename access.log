@@ -8,3 +8,5 @@
 ::1 - - [21/Nov/2025:07:01:46 +0000] "POST /api/auth/register HTTP/1.1" 201 365 "-" "PostmanRuntime/7.49.1"
 ::1 - - [21/Nov/2025:07:04:27 +0000] "GET /api/auth/register HTTP/1.1" 404 156 "-" "PostmanRuntime/7.49.1"
 ::1 - - [21/Nov/2025:07:04:42 +0000] "POST /api/auth/login HTTP/1.1" 200 365 "-" "PostmanRuntime/7.49.1"
+::1 - - [21/Nov/2025:08:22:14 +0000] "POST /api/auth/register HTTP/1.1" 201 366 "-" "PostmanRuntime/7.49.1"
+::1 - - [21/Nov/2025:08:33:58 +0000] "POST /api/auth/login HTTP/1.1" 200 366 "-" "PostmanRuntime/7.49.1"

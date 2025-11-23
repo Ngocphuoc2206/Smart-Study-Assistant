@@ -4,13 +4,15 @@ import { User } from "../models/user";
 import { signAccessToken } from "../utils/jwt";
 import { logDebug } from "../utils/logger";
 import { AuthRequest } from "../middlewares/authMiddleware";
-
 const SALT_ROUNDS = 10;
 
 //POST /auth/register
 export const register = async(req: Request, res: Response) => {
     try{
-        const {firstName, lastName, email, password} = req.body;
+        // Guard in case body parser didn't populate req.body
+        const body = req.body || {};
+        if (!req.body) logDebug("Register called with empty body", req.headers || {});
+        const {firstName, lastName, email, password} = body;
         if (!firstName || !lastName || !email || !password) {
             return res.status(400).json({
                 success: false,
@@ -139,5 +141,65 @@ export const getMe = async(req: AuthRequest, res: Response) => {
     }catch(error){
         logDebug("Error fetching user data: ", error);
         return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+//PUT /auth/me
+export const updateMe = async (req: AuthRequest, res: Response) => {
+    try {
+        // 1. Kiểm tra Authentication
+        if (!req.user?.userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        const { firstName, lastName, avatarUrl } = req.body;
+
+        // 2. Chuẩn bị dữ liệu cần update (Chỉ lấy các trường cho phép)
+        // Cách thủ công để tránh người dùng gửi lên các trường cấm (như role, email)
+        const updateData: any = {};
+        if (firstName) updateData.firstName = firstName;
+        if (lastName) updateData.lastName = lastName;
+        if (avatarUrl) updateData.avatarUrl = avatarUrl;
+
+        // 3. Tìm và Update trong Database
+        // { new: true } -> Trả về dữ liệu MỚI sau khi update
+        // { runValidators: true } -> Bắt Mongoose kiểm tra độ dài, kiểu dữ liệu...
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.userId,
+            updateData,
+            { new: true, runValidators: true }
+        );
+
+        // 4. Kiểm tra nếu không tìm thấy user
+        if (!updatedUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        logDebug("User updated profile: ", updatedUser);
+
+        // 5. Trả về kết quả thủ công
+        return res.status(200).json({
+            success: true,
+            data: {
+                id: updatedUser._id,
+                firstName: updatedUser.firstName,
+                lastName: updatedUser.lastName,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                avatarUrl: updatedUser.avatarUrl
+            }
+        });
+
+    } catch (error) {
+        logDebug("Error updating user: ", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
     }
 }

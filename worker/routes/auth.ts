@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import { getMe, login, register, updateMe } from "../controllers/auth";
 
 const authRouter = Router();

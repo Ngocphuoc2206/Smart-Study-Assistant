@@ -146,7 +146,7 @@ export const getMe = async(req: AuthRequest, res: Response) => {
 //PUT /auth/me
 export const updateMe = async (req: AuthRequest, res: Response) => {
     try {
-        // 1. Kiểm tra Authentication
+        // 1. Check Authentication
         if (!req.user?.userId) {
             return res.status(401).json({
                 success: false,
@@ -156,23 +156,21 @@ export const updateMe = async (req: AuthRequest, res: Response) => {
 
         const { firstName, lastName, avatarUrl } = req.body;
 
-        // 2. Chuẩn bị dữ liệu cần update (Chỉ lấy các trường cho phép)
-        // Cách thủ công để tránh người dùng gửi lên các trường cấm (như role, email)
+        // 2. prepare necessary data update 
+        
         const updateData: any = {};
         if (firstName) updateData.firstName = firstName;
         if (lastName) updateData.lastName = lastName;
         if (avatarUrl) updateData.avatarUrl = avatarUrl;
 
-        // 3. Tìm và Update trong Database
-        // { new: true } -> Trả về dữ liệu MỚI sau khi update
-        // { runValidators: true } -> Bắt Mongoose kiểm tra độ dài, kiểu dữ liệu...
+        // 3. Find và Update in Database
         const updatedUser = await User.findByIdAndUpdate(
             req.user.userId,
             updateData,
             { new: true, runValidators: true }
         );
 
-        // 4. Kiểm tra nếu không tìm thấy user
+        // 4. Check user not found
         if (!updatedUser) {
             return res.status(404).json({
                 success: false,
@@ -182,7 +180,7 @@ export const updateMe = async (req: AuthRequest, res: Response) => {
 
         logDebug("User updated profile: ", updatedUser);
 
-        // 5. Trả về kết quả thủ công
+        // 5. Return result
         return res.status(200).json({
             success: true,
             data: {

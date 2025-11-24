@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Task } from "../models/task";
 import { logDebug } from "../utils/logger";
-import { log } from "console";
 
 // POST /task
 export const createTask = async(req: AuthRequest, res: Response) => {
@@ -43,6 +42,7 @@ export const getTasks = async(req: AuthRequest, res: Response) => {
 
 // GET /task/:id
 export const getTaskById = async(req: AuthRequest, res: Response) => {
+    logDebug("getTaskById", req.params.id);
     try{
         const task = await Task.findOne({
             _id: req.params.id,
@@ -62,6 +62,7 @@ export const getTaskById = async(req: AuthRequest, res: Response) => {
 
 // Patch /task/:id
 export const updateTask = async(req: AuthRequest, res: Response) => {
+    logDebug("updateTask by id", req.params.id);
     try{
         const task = await Task.findOneAndUpdate({
             _id: req.params.id,
@@ -82,6 +83,7 @@ export const updateTask = async(req: AuthRequest, res: Response) => {
 
 // DELETE /task/:id
 export const deleteTask = async(req: AuthRequest, res: Response) => {
+    logDebug("deleteTask by id", req.params.id);
     try{
         const task = await Task.findOneAndDelete({
             _id: req.params.id,

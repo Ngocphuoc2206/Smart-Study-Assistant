@@ -15,5 +15,3 @@ export const created = (res: Response, data: any, message = "Success") => {
 export const error = (res: Response, data: any, message: String, details?: any) => {
   return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message, data });
 };
-
-

@@ -68,7 +68,7 @@ export const getSchedule = async (req: AuthRequest, res: Response) => {
         }
 
         const { from, to } = req.query;
-        const userId = req.user.userId;
+        const userId = req.user?.userId;
 
         let query: any = { user: userId };
 

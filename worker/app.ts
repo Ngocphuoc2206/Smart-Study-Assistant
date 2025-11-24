@@ -12,7 +12,9 @@ import errorHandler from "./middlewares/error";
 import requestId from "./middlewares/requestID";
 import authRouter from "./routes/auth";
 import scheduleRouter from "./routes/schedule";
-
+import "./models/user";
+import "./models/course";
+import "./models/schedule";
 //Configure env from file env
 dotenv.config();
 

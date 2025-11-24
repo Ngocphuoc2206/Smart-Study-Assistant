@@ -11,6 +11,7 @@ import authMiddleware from "./middlewares/authMiddleware";
 import errorHandler from "./middlewares/error";
 import requestId from "./middlewares/requestID";
 import authRouter from "./routes/auth";
+import taskRouter from "./routes/task";
 
 //Configure env from file env
 dotenv.config();
@@ -39,6 +40,7 @@ export const createApp = async () => {
 
   //Route
   app.use("/api/auth", authRouter);
+  app.use("/api/task", taskRouter);
 
   app.get("/api/version", (req, res) => {
     res.json({

@@ -1,7 +1,7 @@
 import {Router} from "express";
 import { createSchedule, getSchedule, updateSchedule, deleteSchedule} from "../controllers/schedule";
 import { get } from "http";
-//
+///
 const scheduleRouter = Router();
 
 scheduleRouter.post("/", createSchedule);

@@ -1,12 +1,13 @@
 import { NextFunction, Request, Response } from "express";
-import { v4 as uuid } from "uuid";
+import crypto from "crypto";
 
 interface RequestWithId extends Request {
     id?: string;
 }
   
 export default function requestId(req: RequestWithId, res: Response, next: NextFunction) {
-    const requestId = uuid();
+    const requestId = crypto.randomUUID();
+    
     req.id = requestId;
     res.setHeader("X-Request-Id", requestId);
     next();

@@ -9,6 +9,4 @@ scheduleRouter.get("/", getSchedule);
 scheduleRouter.put("/:id", updateSchedule);
 scheduleRouter.delete("/:id", deleteSchedule);
 
-
-
 export default scheduleRouter;

@@ -12,6 +12,7 @@ import errorHandler from "./middlewares/error";
 import requestId from "./middlewares/requestID";
 import authRouter from "./routes/auth";
 import taskRouter from "./routes/task";
+import scheduleRouter from "./routes/schedule";
 
 //Configure env from file env
 dotenv.config();
@@ -37,11 +38,12 @@ export const createApp = async () => {
   app.use(requestId);
   app.use(authMiddleware);
   app.use(errorHandler);
+  //#endregion
 
   //Route
   app.use("/api/auth", authRouter);
   app.use("/api/task", taskRouter);
-
+  app.use("/api/schedule", scheduleRouter);
   app.get("/api/version", (req, res) => {
     res.json({
       version: process.env.API_VERSION,

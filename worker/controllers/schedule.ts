@@ -112,7 +112,7 @@ export const updateSchedule = async (req: AuthRequest, res: Response) => {
         const updatedSchedule = await Schedule.findOneAndUpdate(
             { _id: id, user: req.user.userId },
             updateData,
-            { new: true, runValidators: true } // new: true để trả về data mới sau khi sửa
+            { new: true, runValidators: true }
         );
 
         if (!updatedSchedule) {
@@ -150,6 +150,7 @@ export const updateSchedule = async (req: AuthRequest, res: Response) => {
 // DELETE /api/schedules/:id
 export const deleteSchedule = async (req: AuthRequest, res: Response) => {
     try {
+        logDebug("deleteSchedule by id", req.params.id);
         // 1. Check Auth
         if (!req.user?.userId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -169,8 +170,6 @@ export const deleteSchedule = async (req: AuthRequest, res: Response) => {
                 message: "Schedule not found or unauthorized",
             });
         }
-
-        logDebug("Schedule deleted: ", id);
 
         return res.status(200).json({
             success: true,

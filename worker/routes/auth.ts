@@ -10,6 +10,3 @@ authRouter.get("/me", getMe);
 authRouter.put("/me", updateMe);
 
 export default authRouter;
-
-
-

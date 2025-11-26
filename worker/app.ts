@@ -11,10 +11,10 @@ import authMiddleware from "./middlewares/authMiddleware";
 import errorHandler from "./middlewares/error";
 import requestId from "./middlewares/requestID";
 import authRouter from "./routes/auth";
+import taskRouter from "./routes/task";
 import scheduleRouter from "./routes/schedule";
-import "./models/user";
-import "./models/course";
-import "./models/schedule";
+import nlpRouter from "./routes/nlp";
+
 //Configure env from file env
 dotenv.config();
 
@@ -39,11 +39,13 @@ export const createApp = async () => {
   app.use(requestId);
   app.use(authMiddleware);
   app.use(errorHandler);
+  //#endregion
 
   //Route
   app.use("/api/auth", authRouter);
+  app.use("/api/task", taskRouter);
   app.use("/api/schedule", scheduleRouter);
-
+  app.use("/api/nlp", nlpRouter);
   app.get("/api/version", (req, res) => {
     res.json({
       version: process.env.API_VERSION,

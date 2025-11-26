@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyAccessToken } from "../utils/jwt";
-import { success } from "zod";
 
 const EXCEPT_PATHS = [
   "/api/auth/login", 
-  "/api/auth/register"
+  "/api/auth/register",
+  "/api/auth/me",
+  "/api/nlp/detect-intent",
 ];
 
 export interface AuthRequest extends Request {
@@ -14,6 +15,7 @@ export interface AuthRequest extends Request {
 }
 
 const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  console.log("PATH:", req.path, "ORIGINAL:", req.originalUrl);
   if (EXCEPT_PATHS.includes(req.path)) {
     return next();
   }

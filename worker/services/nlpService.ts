@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { IntentConfig, RootConfig } from "@/shared/type";
 import { logDebug, logError } from "../utils/logger";
+import { classifyIntentLLM } from "./llmIntentService";
 
 let intentConfig: RootConfig;
 
@@ -141,10 +142,21 @@ function evaluateIntent(intent: IntentConfig, text: string): number{
     return matchCount + priority;
 }
 
+const LLM_CONFIDENCE_THRESHOLD = 0.7;
+
 export const NLPService = {
-    detectIntent(rawText: string): string{
+    async detectIntent(rawText: string): Promise<string>{
         try{
             if (!rawText || rawText.trim() === "") return intentConfig.defaultIntent;
+
+            //Call LLM
+            const llmResult = await classifyIntentLLM(rawText);
+            if (llmResult.intent && 
+                llmResult.intent !== intentConfig.defaultIntent && 
+                llmResult.confidence >= LLM_CONFIDENCE_THRESHOLD) {
+                    return llmResult.intent;
+                }
+            // If confidence < LLM_CONFIDENCE_THRESHOLD or unknown -> fallback rule-based
             const text = normalizeText(rawText);
             if (!text) return intentConfig.defaultIntent;
             let maxScore = 0;

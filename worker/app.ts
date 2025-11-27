@@ -34,7 +34,7 @@ export const createApp = async () => {
   })
   app.use(morgan("combined", { stream: accessLogStream }))
 
-  // region Register Middleware
+  //#region Register Middleware
   app.use(cors());
   app.use(requestId);
   app.use(authMiddleware);

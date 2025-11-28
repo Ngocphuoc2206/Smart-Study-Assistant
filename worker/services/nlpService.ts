@@ -253,8 +253,13 @@ export const NLPService = {
 
             if (parsedDates.length > 0) {
                 const dateResult = parsedDates[0];
-                entities.datetime = dateResult.start.date();
+                //(issue #8)fix timezone to GMT+7
+                let rawDate = dateResult.start.date();
                 
+                const GMT7_OFFSET = 7 * 60 * 60 * 1000;
+                const fixedDate = new Date(rawDate.getTime() + GMT7_OFFSET);
+
+                entities.datetime = fixedDate;
                 //1. Remove specific time clusters (9am, 9:30am, 10am) using Regex first
                 cleanText = cleanText.replace(/\b\d{1,2}\s*(?:h|giờ|:)\s*(?:\d{2})?\b/gi, "");
                 cleanText = cleanText.replace(/\b\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?\b/g, "");

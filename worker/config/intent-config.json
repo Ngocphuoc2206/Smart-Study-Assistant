@@ -1,0 +1,55 @@
+{
+    "defaultIntent": "unknown",
+    "minScore": 1,
+    "intents": [
+      {
+        "name": "ask_theory",
+        "description": "Người dùng hỏi lý thuyết / khái niệm",
+        "keywords_any": ["ly thuyet", "giai thich", "khai niem", "la gi"],
+        "required": [],
+        "excluded": ["bai tap", "su kien"],
+        "priority": 5
+      },
+      {
+        "name": "create_event",
+        "description": "Người dùng muốn tạo / đặt lịch",
+        "keywords_any": ["tao su kien", "tao lich", "dat lich", "nhac toi", "nhac minh"],
+        "required": [],
+        "excluded": [],
+        "priority": 10
+      },
+      {
+        "name": "create_exercise",
+        "description": "Người dùng muốn tạo bài tập / quiz",
+        "keywords_any": ["tao bai tap", "tao quiz", "tao cau hoi", "bai tap ve nha"],
+        "required": [],
+        "excluded": [],
+        "priority": 8
+      },
+      {
+        "name": "update_info",
+        "description": "Người dùng muốn chỉnh sửa / cập nhật",
+        "keywords_any": ["cap nhat", "sua", "chinh sua", "doi", "thay doi"],
+        "required": [],
+        "excluded": [],
+        "priority": 6
+      },
+      {
+        "name": "ask_schedule",
+        "description": "Người dùng hỏi lịch",
+        "keywords_any": ["lich hoc", "lich lam", "lich ngay mai", "hom nay co tiet nao", "mai hoc", "thu may hoc"],
+        "required": [],
+        "excluded": [],
+        "priority": 7
+      },
+      {
+        "name": "ask_deadline",
+        "description": "Người dùng hỏi deadline",
+        "keywords_any": ["deadline", "han nop", "han cuoi", "bao gio nop", "den bao gio", "ngay nop", "han nop bai tap"],
+        "required": [],
+        "excluded": [],
+        "priority": 9
+      }
+    ]
+  }
+  

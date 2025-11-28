@@ -18,7 +18,7 @@ export function QuickActions({
   onOpenChat,
 }: QuickActionsProps) {
   return (
-    <Card>
+    <Card>F
       <CardHeader>
         <CardTitle>Bắt đầu nhanh</CardTitle>
       </CardHeader>

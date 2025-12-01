@@ -35,7 +35,7 @@ export const register = async(req: Request, res: Response) => {
             firstName,
             lastName,
             email,
-            passwordHash,
+            passwordHash: passwordHash,
             role: body.role || "student"
         });
 

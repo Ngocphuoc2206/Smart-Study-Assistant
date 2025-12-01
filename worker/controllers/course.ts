@@ -26,7 +26,7 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
 
         // 3. Create Course
         const newCourse = await Course.create({
-            user: req.user.userId,
+            teacher: req.user.userId,
             name,
             code,
             description,

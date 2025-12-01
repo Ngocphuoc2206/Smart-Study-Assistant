@@ -1,7 +1,6 @@
 import {Schema, model, Document, Types} from "mongoose";
 
 export interface ICourse extends Document{
-    user: Types.ObjectId; // (issue #23) Update course owner
     name: String;
     code?: String;
     description?: String;
@@ -14,11 +13,6 @@ export interface ICourse extends Document{
 
 //Create schema
 const courseSchema = new Schema<ICourse>({
-    user: {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-        required: true
-    },
     name: {
         type: String, 
         required: [true, "Course name is required"],  

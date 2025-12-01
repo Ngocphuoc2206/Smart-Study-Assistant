@@ -35,8 +35,8 @@ export const register = async(req: Request, res: Response) => {
             firstName,
             lastName,
             email,
-            passwordHash: passwordHash,
-            role: "student"
+            passwordHash,
+            role: body.role || "student"
         });
 
         // Assign token

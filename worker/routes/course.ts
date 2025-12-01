@@ -8,4 +8,4 @@ courseRouter.get("/", getCourses);
 courseRouter.put("/:id", updateCourse);
 courseRouter.delete("/:id", deleteCourse);
 
-export default courseRouter;    
+export default courseRouter; 

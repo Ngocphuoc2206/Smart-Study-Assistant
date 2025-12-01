@@ -25,15 +25,13 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
         }
 
         // 3. Create Course
-        // Tự động gán teacher là người đang đăng nhập
         const newCourse = await Course.create({
             user: req.user.userId,
-            teacher: req.user.userId,
             name,
             code,
             description,
             color,
-            students: students || [] // Mặc định mảng rỗng nếu không có
+            students: students || [] // default to empty array if not provided
         });
 
         logDebug("New course created: ", newCourse);
@@ -47,7 +45,7 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
     } catch (error: any) {
         logDebug("Error creating course: ", error);
 
-        // Xử lý lỗi validation của Mongoose (ví dụ: tên quá dài, sai kiểu...)
+        // Fix handly validation by Mongoose 
         if (error.name === 'ValidationError') {
             return res.status(400).json({
                 success: false,
@@ -76,13 +74,13 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
         const userId = req.user.userId;
         logDebug("getCourses for user:", userId);
 
-        // Lấy danh sách khóa học mà user là Giảng viên (teacher) HOẶC là Học viên (students)
+        // get the list of courses that the user takes (teacher) or (students)
         const courses = await Course.find({
             $or: [
                 { teacher: userId },
                 { students: userId }
             ]
-        }).sort({ createdAt: -1 }); // Mới nhất lên đầu
+        }).sort({ createdAt: -1 });
 
         return res.status(200).json({
             success: true,
@@ -111,7 +109,7 @@ export const getCourseById = async (req: AuthRequest, res: Response) => {
         const { id } = req.params;
         const userId = req.user.userId;
 
-        // Tìm course theo ID và đảm bảo user có quyền xem (là GV hoặc SV)
+        // Find course by ID and make sure user has view permission (teacher or student)
         const course = await Course.findOne({
             _id: id,
             $or: [
@@ -153,22 +151,22 @@ export const updateCourse = async (req: AuthRequest, res: Response) => {
 
         const { id } = req.params;
         
-        // 1. Lấy cụ thể từng trường từ body (Destructuring)
+        // 1. Get specific fields from body (Destructuring)
         const { name, code, description, color, students } = req.body;
 
-        // 2. Tạo một object mới, CHỈ NHÉT những gì được phép sửa vào đây
+        // 2. Create a new object, ONLY put what is allowed to be edited in here
         const updateData: any = {};
         
-        // Chỉ cập nhật nếu người dùng có gửi lên (khác undefined)
+        // Only update if user submits (other than undefined)
         if (name !== undefined) updateData.name = name;
         if (code !== undefined) updateData.code = code;
         if (description !== undefined) updateData.description = description;
         if (color !== undefined) updateData.color = color;
         if (students !== undefined) updateData.students = students;
-        // 3. Thực hiện Update với dữ liệu sạch (updateData)
+        // 3. Perform Update
         const updatedCourse = await Course.findOneAndUpdate(
             { _id: id, teacher: req.user.userId },
-            updateData, // Chỉ chứa name, code, color...
+            updateData, 
             { new: true, runValidators: true }
         );
 
@@ -216,7 +214,7 @@ export const deleteCourse = async (req: AuthRequest, res: Response) => {
         const { id } = req.params;
         logDebug("deleteCourse id:", id);
 
-        // Chỉ cho phép Giảng viên (teacher) xóa khóa học
+        // Only teachers can delete courses
         const deletedCourse = await Course.findOneAndDelete({
             _id: id,
             teacher: req.user.userId

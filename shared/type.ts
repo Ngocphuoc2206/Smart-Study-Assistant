@@ -1,3 +1,5 @@
+import { ObjectId } from "mongoose";
+
 //#region Intent Detect
 export type IntentConfig = {
     name: string;
@@ -14,9 +16,10 @@ export type RootConfig = {
     intents: IntentConfig[];
 }
 
-export type VNIntentName = 'add_event' | 'find_event' | 'unknown' | 'error';
+export type VNIntentName = 'add_event' | 'find_event' | 'create_task' | 'unknown' | 'error';
 
 export type VNEntities = {
+    userId: any | ObjectId;
     title?: string;
     type?: 'exam' | 'assignment' | 'lecture' | 'other';
     date?: string; // YYYY-MM-DD

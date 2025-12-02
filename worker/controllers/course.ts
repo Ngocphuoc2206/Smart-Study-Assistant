@@ -6,6 +6,7 @@ import { logDebug } from "../utils/logger";
 // POST /api/courses
 export const createCourse = async (req: AuthRequest, res: Response) => {
     try {
+        const { userId } = req.params;
         // 1. Check Auth
         if (!req.user?.userId) {
             return res.status(401).json({
@@ -64,26 +65,49 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
 // GET /api/courses
 export const getCourses = async (req: AuthRequest, res: Response) => {
     try {
-        if (!req.user?.userId) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized"
-            });
+        // 1. Lấy tham số từ URL (Query Params)
+        const { teacher, student } = req.query;
+        
+        let query: any = {};
+
+        // 2. Xây dựng bộ lọc
+        if (teacher) {
+            // Nếu muốn tìm theo giảng viên
+            query.teacher = teacher;
         }
 
-        const userId = req.user.userId;
-        logDebug("getCourses for user:", userId);
+        if (student) {
+            // Nếu muốn tìm khóa học mà sinh viên này tham gia
+            // Mongoose tự động tìm xem ID này có nằm trong mảng 'students' không
+            query.students = student;
+        }
 
-        // get the list of courses that the user takes (teacher) or (students)
-        const courses = await Course.find({
-            $or: [
-                { teacher: userId },
-                { students: userId }
-            ]
-        }).sort({ createdAt: -1 });
+        // 3. Logic Fallback (Nếu không truyền gì trên URL)
+        // Thì lấy khóa học của chính người đang đăng nhập (Logic cũ)
+        if (!teacher && !student) {
+             if (!req.user?.userId) {
+                return res.status(401).json({ 
+                    success: false, 
+                    message: "Unauthorized: Please login or provide teacher/student ID" 
+                });
+             }
+             const userId = req.user.userId;
+             query = {
+                $or: [
+                    { teacher: userId },
+                    { students: userId }
+                ]
+             };
+        }
+
+        logDebug("Fetching courses with query:", query);
+
+        // 4. Thực hiện tìm kiếm
+        const courses = await Course.find(query).sort({ createdAt: -1 });
 
         return res.status(200).json({
             success: true,
+            count: courses.length, // Thêm số lượng để dễ check
             data: courses
         });
 
@@ -240,3 +264,5 @@ export const deleteCourse = async (req: AuthRequest, res: Response) => {
         });
     }
 };
+
+

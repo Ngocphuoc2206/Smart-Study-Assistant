@@ -1,10 +1,11 @@
 import fs from "fs";
 import path from "path";
-import { IntentConfig, RootConfig } from "@/shared/type";
+import { DetectedIntent, IntentConfig, RootConfig } from "@/shared/type";
 import { logDebug, logError } from "../utils/logger";
 import { classifyIntentLLM } from "./llmIntentService";
 // Import chrono-node(#issue 8)
 import * as chrono from "chrono-node";
+import { unknown } from "zod";
 
 let intentConfig: RootConfig;
 
@@ -26,6 +27,94 @@ function loadConfig(){
     }
 }
 loadConfig();
+
+function formatTime(t?: string){
+    if (!t) return '';
+    //support 9h, 9:00, 09:00
+    if (/^\d{1,2}h\d{0,2}$/.test(t)) return t.replace('h', ':') + t.endsWith('h');
+    return t;
+}
+
+function formatDate(d?: string) {
+    if (!d) return '';
+    // YYYY-MM-DD -> DD/MM/YYYY
+    const [year, month, day] = d.split('-');
+    return `${day}/${month}/${year}`;
+}
+
+function remindersToText(rs?: number[]){
+    if (!rs || rs.length === 0) return '';
+    const map: Record<number, string> = {
+        [-60]: '1 phút',
+        [-300]: '5 phút',
+        [-900]: '15 phút',
+        [-1800]: '30 phút',
+        [-3600]: '1 giờ',
+        [-7200]: '2 giờ',
+        [-86400]: '1 ngày',
+        [-172800]: '2 ngày',
+        [-604800]: '1 tuần',
+    };
+    const parts = rs.map(r => map[r] || `${Math.abs(r)} giây`).filter(Boolean);
+    return parts.length ? ` (nhắc trước ${parts.join(', ')})` : '';
+}
+
+function polite(s: string) {
+    return s.replace(/\s+/g, ' ').trim();
+}
+
+export function generateResponse(intent: DetectedIntent): string{
+    const {name, entities} = intent || {name: unknown, entities: []};
+    const missing = entities?.missingEntities ?? [];
+
+    const askMissing = (need: string[]) =>
+        polite(
+          `Mình cần thêm ${need.map(n => `**${n}**`).join(', ')} để thực hiện nhé. ` +
+          `Bạn có thể nói kiểu: “${name === 'add_event'
+            ? 'Thêm [loại] [tên] vào [ngày] [giờ], nhắc trước [thời gian]'
+            : 'Tìm sự kiện [tên/loại] vào [ngày] [giờ]'}”.`
+        );
+    switch (name){
+        case 'add_event':{
+            if (missing.length > 0) return askMissing(missing);
+            const t = entities?.type;
+            const title = entities?.title || (t === 'exam' ? 'kỳ thi' : t === 'assignment' ? 'bài tập' : 'sự kiện mới');
+            const date = formatDate(entities?.date);
+            const time = formatTime(entities?.timeStart);
+            const course = entities?.courseName ? ` cho môn **${entities.courseName}**` : '';
+            const location = entities?.location ? ` tại **${entities.location}**` : '';
+            const remind = remindersToText(entities?.reminder);
+
+            const line1 = `Đã ghi nhận ${title}${course} vào **${date}${time ? ' ' + time : ''}**${location}${remind}.`;
+            const line2 = `Bạn muốn mình **lưu** sự kiện này ngay không? (trả lời “Có” để tạo)`;
+            return polite(`${line1} ${line2}`);
+        }
+        case 'find_event': {
+            if (missing?.length && !(missing.length === 1 && missing.includes('title'))) {
+              // với "find" có thể chỉ cần 1 vài tiêu chí
+              return askMissing(missing);
+            }
+            const date = formatDate(entities?.date);
+            const time = formatTime(entities?.timeStart);
+            const t = entities?.type ? ` loại **${entities.type}**` : '';
+            const title = entities?.title ? ` có tên **${entities.title}**` : '';
+            const at = date ? ` vào **${date}${time ? ' ' + time : ''}**` : '';
+            return polite(`Mình sẽ tìm các sự kiện${t}${title}${at}. Bạn muốn lọc thêm theo **môn học** hoặc **địa điểm** không?`);
+        }
+        case 'unknown': {
+            return polite(
+              `Xin lỗi, mình chưa hiểu rõ yêu cầu. ` +
+              `Bạn có thể nói: “Thêm kỳ thi Toán **12/12 09:00**, nhắc trước **1 ngày**” ` +
+              `hoặc “Tìm **bài tập** vào **tuần sau Thứ 3**”.`
+            );
+        }
+        case 'error': {
+            return polite(`Hiện có lỗi khi xử lý yêu cầu. Bạn thử lại giúp mình một chút nhé.`);
+        }
+        default:
+            return polite(`Mình chưa hỗ trợ ý định này. Bạn mô tả lại theo mẫu “Thêm [loại] [tên] [ngày] [giờ]” nhé.`);
+    }
+}
 
 //Validate
 const VN_CHAR_MAP: Record<string, string> = {

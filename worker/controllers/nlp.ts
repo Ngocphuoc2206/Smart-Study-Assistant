@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { logDebug } from "../utils/logger";
-import { NLPService } from "../services/nlpService";
-import { en } from "chrono-node";
+import { generateResponse, NLPService } from "../services/nlpService";
+import { DetectedIntent, mapIntentName } from "../../shared/type";
 
 export const detectIntentHandler = async (req: Request, res: Response) => {
     try{
@@ -10,12 +10,19 @@ export const detectIntentHandler = async (req: Request, res: Response) => {
         const intent = await NLPService.detectIntent(text || "");
         //(issue #8) Extract information
         const entities = NLPService.extractEntities(text || "");
+        const detected: DetectedIntent = {
+            name: mapIntentName(intent),
+            entities: entities,
+        };
+        const responseText = generateResponse(detected);
+        logDebug("[NLPController] detectIntent response", { responseText });
 
         return res.status(200).json({
             success: true,
             data: {
-                intent,
-                entities //(issue #8) Return entities 
+                intent: detected.name,
+                responseText,
+                entities: detected.entities //(issue #8) Return entities 
             }
         });
     }catch(error){

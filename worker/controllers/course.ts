@@ -34,6 +34,7 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
             color,
             students: students || [] // default to empty array if not provided
         });
+        
 
         logDebug("New course created: ", newCourse);
 

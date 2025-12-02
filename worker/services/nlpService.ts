@@ -163,6 +163,7 @@ function mapVietnameseDateToEnglish(text: string): string {
 export interface ExtractedEntities {
     datetime?: Date;
     title?: string;
+    course?: string; //issue #23
     reminderOffset?: number;
     type?: 'exam' | 'lecture' | 'other' | 'assignment';
 }
@@ -240,7 +241,8 @@ export const NLPService = {
             datetime: undefined,
             reminderOffset: 0,
             title: "",
-            type: "other"
+            type: "other",
+            course: undefined //(issue #23)
         };
 
         try {
@@ -294,6 +296,14 @@ export const NLPService = {
                 
                 entities.reminderOffset = -seconds; 
                 cleanText = cleanText.replace(reminderMatch[0], "");
+            }
+
+            // 3. Xử lý Môn học(issue #23) 
+            const courseRegex = /(?:môn|lớp|học phần)\s+([a-zA-ZđĐáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ\d\s]+?)(?=\s*(?:vào|lúc|ngày|mai|thứ|sáng|chiều|tối|$))/i;
+            const courseMatch = text.match(courseRegex);
+            
+            if (courseMatch && courseMatch[1]) {
+                entities.course = courseMatch[1].trim(); 
             }
 
             // 3. Event Type (Extract Type) 

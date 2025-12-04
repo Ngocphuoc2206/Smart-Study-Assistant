@@ -35,6 +35,27 @@ function formatTime(t?: string){
     return t;
 }
 
+function isoToDate(iso?: string) {
+    if (!iso) return '';
+    return iso.slice(0, 10);
+  }
+  
+  function isoToTime(iso?: string) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
+function computeMissingForAddEvent(entities: { title?: string; dateTime?: string; timeStart?: string }) {
+    const missing: string[] = [];
+    if (!entities.title) missing.push('title');
+    if (!entities.dateTime) missing.push('dateTime');
+    if (!entities.timeStart && !entities.dateTime) missing.push('timeStart');
+    return missing;
+}
+
 function formatDate(d?: string) {
     if (!d) return '';
     // YYYY-MM-DD -> DD/MM/YYYY

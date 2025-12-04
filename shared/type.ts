@@ -16,10 +16,15 @@ export type RootConfig = {
     intents: IntentConfig[];
 }
 
-export type VNIntentName = 'add_event' | 'find_event' | 'create_task' | 'unknown' | 'error';
+export type VNIntentName =
+  | "add_event"
+  | "create_task"
+  | "find_event"
+  | "unknown"
+  | "error";
 
 export type VNEntities = {
-    userId: any | ObjectId;
+    userId?: any | ObjectId;
     title?: string;
     type?: 'exam' | 'assignment' | 'lecture' | 'other';
     date?: string; // YYYY-MM-DD
@@ -38,22 +43,38 @@ export type DetectedIntent = {
 }
 
 export function mapIntentName(raw: string): VNIntentName {
-    const s = (raw || '').toLowerCase().trim()
-      .replace(/\s+/g, '_')
-      .replace(/[^\w]/g, '');
+    const s = (raw || '').toLowerCase().trim().replace(/\s+/g, '_');
 
-    if (
-      /^(add|add_event|addevent|create|create_event|createevent)$/.test(s) ||
-      /^(them|them_su_kien|tao|tao_su_kien)$/.test(s)
-    ) return 'add_event';
-    
-    if (
-      /^(find|find_event|findevent|search|search_event|searchevent|lookup)$/.test(s) ||
-      /^(tim|tim_kiem|tim_su_kien|liet_ke|loc)$/.test(s)
-    ) return 'find_event';
+    if (["add_event", "add_events", "create_event", "create_schedule"].includes(s)) return "add_event";
+    if (["create_task", "create_exercise", "add_task"].includes(s)) return "create_task";
+
+    if (["find_event", "search_event", "find", "search"].includes(s)) return "find_event";
+    if (["error", "failed"].includes(s)) return "error";
+
+    return "unknown";
+  }
+
+  const pad2 = (n: number) => String(n).padStart(2, "0");
+  const toHHmm = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  const toYYYYMMDD = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
   
-    if (/^(error|failed)$/.test(s)) return 'error';
+  export function toVNEntities(extracted: any): VNEntities {
+    const out: VNEntities = {
+      title: extracted.title,
+      type: extracted.type,
+      courseName: extracted.course,
+    };
   
-    return 'unknown';
+    if (extracted.datetime instanceof Date && !isNaN(extracted.datetime.getTime())) {
+      const d = extracted.datetime;
+      out.date = toYYYYMMDD(d);
+      out.timeStart = toHHmm(d);
+    }
+  
+    if (typeof extracted.reminderOffset === "number" && extracted.reminderOffset !== 0) {
+      out.reminder = [extracted.reminderOffset];
+    }
+  
+    return out;
   }
 //#endregion

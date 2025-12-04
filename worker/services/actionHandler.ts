@@ -12,19 +12,23 @@ export class NLPActionHandler {
                 message: `Thiếu thông tin: ${missing.join(', ')}`
             };
         }
-        switch (intent){
+        switch (intent) {
             case "add_event":
-                return await ScheduleService.createFromNLP(entities);
+              return await ScheduleService.createFromNLP(entities);
+          
             case "create_task":
-                return await TaskService.createFromNLP(entities);
+              return await TaskService.createFromNLP(entities);
+          
+            default:
+              return { success: false, message: "Intent không hỗ trợ tự động tạo." };
         }
-
     }
     static validateEntities(intent: VNIntentName, entities: VNEntities): string[] {
-        const required = intent === "create_task"
-          ? ["title", "date", "timeStart", "type"]
-          : ["title", "date", "timeStart"];
-        const missing = required.filter(k => !entities[k as keyof VNEntities]);
-        return missing;
-      }
+        const required =
+          intent === "create_task"
+            ? ["title", "date"]
+            : ["title", "date", "timeStart"];
+      
+        return required.filter(k => !(entities as any)[k]);
+    }
 }

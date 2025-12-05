@@ -18,7 +18,7 @@ export const getChatHistory = async (req: AuthRequest, res: Response) => {
         const userId = req.user.userId;
         //Xử lý Pagination riêng biệt (Để test logic)
         const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 20;
+        const limit = parseInt(req.query.limit as string) || 4;
         const skip = (page - 1) * limit;
         logDebug(`getChatHistoryPagination user: ${userId}, page: ${page}, limit: ${limit}`);
         //Đếm tổng số tin nhắn để tính tổng số trang

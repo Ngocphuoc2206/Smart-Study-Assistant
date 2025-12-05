@@ -16,18 +16,40 @@ export const getChatHistory = async (req: AuthRequest, res: Response) => {
         }
 
         const userId = req.user.userId;
-        logDebug("getChatHistory for user:", userId);
+        //Xử lý Pagination riêng biệt (Để test logic)
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const skip = (page - 1) * limit;
+        logDebug(`getChatHistoryPagination user: ${userId}, page: ${page}, limit: ${limit}`);
+        //Đếm tổng số tin nhắn để tính tổng số trang
+        const totalMessages = await ChatMessage.countDocuments({ user: userId });
+        const totalPages = Math.ceil(totalMessages / limit);
 
         //
-        const messages = await ChatMessage.find({ user: userId }).sort({ createdAt: 1 });
+        const messages = await ChatMessage.find({ user: userId })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+        //Đảo ngược mảng lại để hiển thị tin nhắn theo thứ tự thời gian
+       const chronologicalMessages = messages.reverse();
 
         return res.status(200).json({
             success: true,
-            data: messages
+            data: {
+                messages: chronologicalMessages,
+                pagination: {
+                    currentPage: page,
+                    totalPages: totalPages,
+                    totalMessages: totalMessages,
+                    limit: limit,
+                    hasNextPage: page < totalPages,
+                    hasPrevPage: page > 1
+                }
+            }
         });
 
     } catch (error) {
-        logDebug("Error fetching chat history: ", error);
+        logDebug("Error fetching chat history pagination: ", error);
         return res.status(500).json({
             success: false,
             message: "Internal Server Error"

@@ -1,28 +1,55 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { logDebug } from "../utils/logger";
-import { NLPService } from "../services/nlpService";
-import { en } from "chrono-node";
+import { generateResponse, NLPService } from "../services/nlpService";
+import { DetectedIntent, mapIntentName, toVNEntities, VNIntentName } from "../../shared/type";
+import { AuthRequest } from "../middlewares/authMiddleware";
+import { NLPActionHandler } from "../services/actionHandler";
 
-export const detectIntentHandler = async (req: Request, res: Response) => {
-    try{
-        const { text } = req.body as { text: string } || {};
+import { ChatMessage } from "../models/chatMessage";
+import { AuthRequest } from "../middlewares/authMiddleware";
+
+export const detectIntentHandler = async (req: AuthRequest, res: Response) => {
+  try {
+    const { text, userId: rawUserId } =
+      (req.body as { text?: string; userId?: string }) || {};
+    logDebug("[NLPController] detectIntent request", { text });
+    const intentRaw = await NLPService.detectIntent(text || "");
+    const intentStr =
+    typeof intentRaw === "string"
+      ? intentRaw
+      : (typeof intentRaw === "object" && intentRaw !== null && "intent" in intentRaw
+          ? String((intentRaw as { intent?: unknown }).intent || "")
+          : "");
+    const extracted = NLPService.extractEntities(text || "");
+    const entities = toVNEntities(extracted);
+    const userId = req.user?.userId || rawUserId;
+    const name = mapIntentName(intentStr);
+
         logDebug("[NLPController] detectIntent request", { text });
-        const intent = await NLPService.detectIntent(text || "");
-        //(issue #8) Extract information
-        const entities = NLPService.extractEntities(text || "");
 
-        return res.status(200).json({
-            success: true,
-            data: {
-                intent,
-                entities //(issue #8) Return entities 
-            }
-        });
-    }catch(error){
-        logDebug("[NLPController] Error detecting intent: ", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error"
-        });
+    let actionResult = null;
+    const autoCreateIntents = ["add_event", "add_events", "create_task"];
+    if (autoCreateIntents.includes(detected.name as VNIntentName)) {
+      actionResult = await NLPActionHandler.handleAction(detected.name as VNIntentName, detected.entities);
     }
-}
+
+    const responseText = generateResponse(detected);
+    logDebug("[NLPController] detectIntent response", { responseText, actionResult });
+    return res.status(200).json({
+      success: true,
+      data: {
+        intent: detected.name,
+        responseText,
+        entities: detected.entities,
+        actionResult,
+        extractedEntities: extracted,
+      },
+    });
+  } catch (error) {
+    logDebug("[NLPController] Error detecting intent: ", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};

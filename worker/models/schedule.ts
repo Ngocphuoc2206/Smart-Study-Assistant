@@ -5,12 +5,13 @@ export type ScheduleType = 'lecture' | 'exam' | 'other';
 export interface ISchedule extends Document {
     user: Types.ObjectId;
     course: Types.ObjectId;
-    title: String; // – example “Lý thuyết chương 1”
+    courseName?: string;
+    title: string; // – example “Lý thuyết chương 1”
     type: ScheduleType;
     startTime: Date;
     endTime?: Date;
-    location?: String;
-    notes?: String;
+    location?: string;
+    notes?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -26,7 +27,12 @@ const schedueSchema = new Schema<ISchedule>({
     course: {
         type: Schema.Types.ObjectId,
         ref: 'Course',
-        required: [true, 'Course is required'],
+        required: false
+    },
+    courseName: {
+        type: String,
+        trim: true,
+        required: false
     },
     title: {
         type: String,

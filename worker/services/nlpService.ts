@@ -30,31 +30,12 @@ loadConfig();
 
 function formatTime(t?: string){
     if (!t) return '';
-    //support 9h, 9:00, 09:00
-    if (/^\d{1,2}h\d{0,2}$/.test(t)) return t.replace('h', ':') + t.endsWith('h');
+    if (/^\d{1,2}h\d{0,2}$/.test(t)) {
+      const replaced = t.replace('h', ':');
+      return t.endsWith('h') ? replaced + '00' : replaced; // 9h -> 9:00
+    }
     return t;
-}
-
-function isoToDate(iso?: string) {
-    if (!iso) return '';
-    return iso.slice(0, 10);
   }
-  
-  function isoToTime(iso?: string) {
-    if (!iso) return '';
-    const d = new Date(iso);
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return `${hh}:${mm}`;
-  }
-
-function computeMissingForAddEvent(entities: { title?: string; dateTime?: string; timeStart?: string }) {
-    const missing: string[] = [];
-    if (!entities.title) missing.push('title');
-    if (!entities.dateTime) missing.push('dateTime');
-    if (!entities.timeStart && !entities.dateTime) missing.push('timeStart');
-    return missing;
-}
 
 function formatDate(d?: string) {
     if (!d) return '';
@@ -366,7 +347,7 @@ export const NLPService = {
             if (parsedDates.length > 0) {
                 const dateResult = parsedDates[0];
                 //(issue #8)fix timezone to GMT+7
-                let rawDate = dateResult.start.date();
+                const rawDate = dateResult.start.date();
                 
                 const GMT7_OFFSET = 7 * 60 * 60 * 1000;
                 const fixedDate = new Date(rawDate.getTime() + GMT7_OFFSET);
@@ -409,11 +390,30 @@ export const NLPService = {
             }
 
             // 3. Xử lý Môn học(issue #23) 
-            const courseRegex = /(?:môn|lớp|học phần)\s+([a-zA-ZđĐáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ\d\s]+?)(?=\s*(?:vào|lúc|ngày|mai|thứ|sáng|chiều|tối|$))/i;
+            // Bắt theo cụm "môn|lớp|học phần ..."
+            const courseRegex =
+            /(?:môn|lớp|học phần)\s+([a-zA-ZđĐáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ\d\s]+?)(?=\s*(?:vào|lúc|ngày|mai|thứ|sáng|chiều|tối|$))/i;
+
             const courseMatch = text.match(courseRegex);
-            
-            if (courseMatch && courseMatch[1]) {
-                entities.course = courseMatch[1].trim(); 
+            if (courseMatch?.[1]) {
+            entities.course = courseMatch[1].trim();
+            }
+
+            // Fallback: bắt theo cụm "kỳ thi/thi/kiểm tra ..."
+            if (!entities.course) {
+            const examCourseRegex =
+                /(?:kỳ\s*thi|thi|kiểm\s*tra|test|exam)\s+([a-zA-ZđĐáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ\d\s]+?)(?=\s*(?:vào|lúc|ngày|mai|thứ|\d{1,2}[\/\-]\d{1,2}|sáng|chiều|tối|,|\.|$))/i;
+
+            const m = text.match(examCourseRegex);
+            if (m?.[1]) entities.course = m[1].trim();
+            }
+
+            if (!entities.course) {
+                const assignmentCourseRegex =
+                  /(?:bài\s*tập|deadline|đồ\s*án|assignment)\s+([a-zA-ZđĐ0-9\s]+?)(?=\s*(?:chương|phần|nộp|vào|lúc|ngày|mai|thứ|\d{1,2}[\/\-]\d{1,2}|,|\.|$))/i;
+              
+                const m2 = text.match(assignmentCourseRegex);
+                if (m2?.[1]) entities.course = m2[1].trim();
             }
 
             // 3. Event Type (Extract Type) 

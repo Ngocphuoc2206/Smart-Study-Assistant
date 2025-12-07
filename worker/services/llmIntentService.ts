@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { OpenAI } from "openai";
 import path from "path";
 import fs from "fs";
@@ -5,10 +6,11 @@ import { RootConfig } from "@/shared/type";
 import { logDebug, logError } from "../utils/logger";
 
 // Load list intent from json cofig
-let intentConfig: RootConfig;
-const configPath = path.join(__dirname, "..", "config", "intent-config.json");
-const raw = fs.readFileSync(configPath, "utf-8");
-intentConfig = JSON.parse(raw);
+const intentConfig: RootConfig = (() => {
+    const configPath = path.join(__dirname, "..", "config", "intent-config.json");
+    const raw = fs.readFileSync(configPath, "utf-8");
+    return JSON.parse(raw);
+    })();
 
 //List intent LLM allow choose
 const ALLOWED_INTENTS = intentConfig.intents.map((i: any) => ({

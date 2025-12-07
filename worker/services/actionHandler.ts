@@ -28,7 +28,7 @@ export class NLPActionHandler {
           intent === "create_task"
             ? ["title", "date"]
             : ["title", "date", "timeStart"];
-      
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return required.filter(k => !(entities as any)[k]);
     }
 }

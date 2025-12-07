@@ -6,11 +6,12 @@ export type TaskPriority = 'low' | 'medium' | 'high';
 export interface ITask extends Document{
     user: Schema.Types.ObjectId;
     course: Schema.Types.ObjectId;
-    title: String;
-    description?: String;
+    courseName?: string;
+    title: string;
+    description?: string;
     status: TaskStatus;
     priority: TaskPriority;
-    type?: String;
+    type?: string;
     dueDate: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -26,7 +27,12 @@ const taskSchema = new Schema<ITask>({
     course: {
         type: Schema.Types.ObjectId,
         ref: 'Course',
-        required: [true, 'Course is required'],
+        required: false
+    },
+    courseName: {
+        type: String,
+        trim: true,
+        required: true
     },
     title: {
         type: String,

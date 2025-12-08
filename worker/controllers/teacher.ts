@@ -1,73 +1,110 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Course } from "../models/course";
-import { User } from "../models/user";
 import { logDebug, logError } from "../utils/logger";
-import { ok, error } from "../utils/apiResponse";
+// Chúng ta sẽ tự trả response thủ công để kiểm soát mã 200, 401, 500 theo ý bạn
+// import { ok, error } from "../utils/apiResponse"; 
 
-// GET /api/teacher/students
+// GET /api/teacher/students?courseId=...&search=...
 export const getMyStudents = async (req: AuthRequest, res: Response) => {
   try {
     const teacherId = req.user?.userId;
-    logDebug(`[TEACHER] getMyStudents (Basic logic) request by: ${teacherId}`);
 
-    // BƯỚC 1: Tìm các lớp thầy đang dạy
-    const courses = await Course.find({ teacher: teacherId }).select("students");
+    // [MÃ 401]: Chưa đăng nhập hoặc mất thông tin user
+    if (!teacherId) {
+        return res.status(401).json({ 
+            success: false, 
+            message: "Unauthorized: User ID missing" 
+        });
+    }
 
+    // Lấy tham số từ URL
+    const { courseId, search } = req.query; 
+
+    logDebug(`[TEACHER] getMyStudents request by: ${teacherId}`, { courseId, search });
+
+    // 1. Tạo bộ lọc
+    let courseFilter: any = { teacher: teacherId };
+    
+    if (courseId && typeof courseId === 'string') {
+        courseFilter._id = courseId; 
+    }
+
+    // 2. Query Database
+    const courses = await Course.find(courseFilter)
+      .select("name code students")
+      .populate({
+        path: "students",
+        select: "firstName lastName email avatarUrl",
+        model: "User"
+      });
+
+    // [MÃ 200]: Thành công nhưng danh sách rỗng
     if (!courses || courses.length === 0) {
-      return ok(res, [], "No courses found");
+      return res.status(200).json({
+          success: true,
+          message: "No courses found",
+          data: [] 
+      });
     }
 
-    // BƯỚC 2: Gom tất cả ID học sinh vào một mảng (Dùng vòng lặp for)
-    // Tạo một mảng rỗng để chứa kết quả tạm
-    let allStudentIds: string[] = [];
+    // 3. Logic lọc thủ công (Dùng vòng lặp for dễ hiểu)
+    let resultList: any[] = [];
+    const searchKeyword = (search as string)?.toLowerCase().trim();
 
-    // Chạy vòng lặp qua từng khóa học
     for (let i = 0; i < courses.length; i++) {
-        const currentCourse = courses[i];
-        
-        // Nếu khóa học có học sinh
-        if (currentCourse.students && currentCourse.students.length > 0) {
-            // Chạy vòng lặp qua từng học sinh trong khóa học đó
-            for (let j = 0; j < currentCourse.students.length; j++) {
-                const studentId = currentCourse.students[j];
-                // Nếu tồn tại thì ghi vào danh sách 
-                allStudentIds.push(studentId.toString());
-            }
+      const currentCourse = courses[i];
+      const studentsInCourse = currentCourse.students as any[];
+
+      if (studentsInCourse && studentsInCourse.length > 0) {
+        for (let j = 0; j < studentsInCourse.length; j++) {
+          const student = studentsInCourse[j];
+          const fullName = `${student.firstName} ${student.lastName}`;
+          
+          // Logic tìm kiếm
+          if (searchKeyword) {
+             const matchName = fullName.toLowerCase().includes(searchKeyword);
+             const matchEmail = student.email.toLowerCase().includes(searchKeyword);
+             const matchCourse = currentCourse.name.toLowerCase().includes(searchKeyword);
+             
+             if (!matchName && !matchEmail && !matchCourse) {
+                 continue; 
+             }
+          }
+
+          const rowData = {
+            studentId: student._id,
+            fullName: fullName,
+            email: student.email,
+            avatarUrl: student.avatarUrl,
+            courseName: currentCourse.name,
+            courseCode: currentCourse.code,
+            courseId: currentCourse._id
+          };
+
+          resultList.push(rowData);
         }
+      }
     }
 
-    // BƯỚC 3: Lọc bỏ các ID bị trùng lặp (Dùng vòng lặp for)
-    // Ví dụ: Học sinh A học 2 môn, thì ID của A xuất hiện 2 lần -> Cần giữ lại 1
-    let uniqueStudentIds: string[] = [];
-
-    for (let i = 0; i < allStudentIds.length; i++) {
-        const idCanKiemTra = allStudentIds[i];
-
-        // Kiểm tra: Nếu trong danh sách kết quả CHƯA có ID này -> Thì mới thêm vào
-        if (!uniqueStudentIds.includes(idCanKiemTra)) {
-            uniqueStudentIds.push(idCanKiemTra);
-        }
-    }
-
-    // Kiểm tra nếu không có học sinh nào
-    if (uniqueStudentIds.length === 0) {
-        return ok(res, [], "No students found");
-    }
-
-    // BƯỚC 4: Lấy thông tin chi tiết từ bảng User
-    // (Bước này vẫn dùng $in vì đây là cách tối ưu nhất của Database, 
-    // không nên dùng vòng lặp để query DB vì sẽ rất chậm)
-    const students = await User.find({
-      _id: { $in: uniqueStudentIds }, // Tìm những ai có ID nằm trong danh sách uniqueStudentIds
-      role: "student",
-    }).select("firstName lastName email avatarUrl");
-
-    logDebug(`[TEACHER] Found ${students.length} unique students`);
-    return ok(res, students);
+    logDebug(`[TEACHER] Returned ${resultList.length} students after filter`);
+    
+    // [MÃ 200]: Thành công, trả về dữ liệu
+    return res.status(200).json({
+        success: true,
+        message: "Success",
+        data: resultList
+    });
 
   } catch (err) {
     logError("[TEACHER] getMyStudents error:", err);
-    return error(res, err, "Internal Server Error");
+    
+    // [MÃ 500]: Lỗi Server (Internal Server Error)
+    // Trả JSON rõ ràng để Frontend biết mà báo lỗi
+    return res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+        error: err // Có thể bỏ dòng này nếu không muốn lộ lỗi chi tiết ra ngoài
+    });
   }
 };

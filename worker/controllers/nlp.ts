@@ -1,7 +1,9 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { logDebug } from "../utils/logger";
-import { NLPService } from "../services/nlpService";
-import { en } from "chrono-node";
+import { generateResponse, NLPService } from "../services/nlpService";
+import { DetectedIntent, mapIntentName, toVNEntities } from "../../shared/type";
+import { AuthRequest } from "../middlewares/authMiddleware";
+import { NLPActionHandler } from "../services/actionHandler";
 
 import { ChatMessage } from "../models/chatMessage";
 import { AuthRequest } from "../middlewares/authMiddleware";
@@ -51,4 +53,24 @@ export const detectIntentHandler = async (req: AuthRequest, res: Response) => {
             message: "Internal Server Error"
         });
     }
-}
+
+    const responseText = generateResponse(detected);
+    logDebug("[NLPController] detectIntent response", { responseText, actionResult });
+    return res.status(200).json({
+      success: true,
+      data: {
+        intent: detected.name,
+        responseText,
+        entities: detected.entities,
+        actionResult,
+        extractedEntities: extracted,
+      },
+    });
+  } catch (error) {
+    logDebug("[NLPController] Error detecting intent: ", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};

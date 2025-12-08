@@ -6,7 +6,6 @@ import { AuthRequest } from "../middlewares/authMiddleware";
 import { NLPActionHandler } from "../services/actionHandler";
 
 import { ChatMessage } from "../models/chatMessage";
-import { AuthRequest } from "../middlewares/authMiddleware";
 
 export const detectIntentHandler = async (req: AuthRequest, res: Response) => {
   try {
@@ -23,9 +22,14 @@ export const detectIntentHandler = async (req: AuthRequest, res: Response) => {
     const extracted = NLPService.extractEntities(text || "");
     const entities = toVNEntities(extracted);
     const userId = req.user?.userId || rawUserId;
+    if (userId) {
+      entities.userId = userId;
+    }
     const name = mapIntentName(intentStr);
-
-        logDebug("[NLPController] detectIntent request", { text });
+    const detected: DetectedIntent = {
+      name,
+      entities,
+    }
 
     let actionResult = null;
     const autoCreateIntents = ["add_event", "add_events", "create_task"];

@@ -1,10 +1,10 @@
 import {Schema, model, Document, Types} from "mongoose";
 
 export interface ICourse extends Document{
-    name: String;
-    code?: String;
-    description?: String;
-    color?: String;
+    name: string;
+    code?: string;
+    description?: string;
+    color?: string;
     teacher: Schema.Types.ObjectId;
     students: Schema.Types.ObjectId[];
     createdAt: Date;
@@ -25,8 +25,8 @@ const courseSchema = new Schema<ICourse>({
         trim: true
     },
     color: {type: String, trim: true},
-    teacher: {type: Schema.Types.ObjectId, ref: "User", required: true},
-    students: [{type: Schema.Types.ObjectId, ref: "User", required: true}],
+    teacher: {type: Schema.Types.ObjectId, ref: "User", required: false},
+    students: [{type: Schema.Types.ObjectId, ref: "User", required: false}],
 },
 {
     timestamps: true

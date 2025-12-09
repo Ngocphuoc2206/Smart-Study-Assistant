@@ -24,7 +24,7 @@ export type VNIntentName =
   | "error";
 
 export type VNEntities = {
-    userId?: any | ObjectId;
+    userId?: ObjectId | string;
     title?: string;
     type?: 'exam' | 'assignment' | 'lecture' | 'other';
     date?: string; // YYYY-MM-DD
@@ -58,6 +58,7 @@ export function mapIntentName(raw: string): VNIntentName {
   const toHHmm = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
   const toYYYYMMDD = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export function toVNEntities(extracted: any): VNEntities {
     const out: VNEntities = {
       title: extracted.title,

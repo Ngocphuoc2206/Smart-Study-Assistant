@@ -2,15 +2,15 @@ import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Course } from "../models/course";
 import { logDebug, logError } from "../utils/logger";
-
-import { ok, error } from "../utils/apiResponse"; 
+// Chúng ta sẽ tự trả response thủ công để kiểm soát mã 200, 401, 500 theo ý bạn
+// import { ok, error } from "../utils/apiResponse"; 
 
 // GET /api/teacher/students?courseId=...&search=...
 export const getMyStudents = async (req: AuthRequest, res: Response) => {
   try {
     const teacherId = req.user?.userId;
 
-    
+    // [MÃ 401]: Chưa đăng nhập hoặc mất thông tin user
     if (!teacherId) {
         return res.status(401).json({ 
             success: false, 
@@ -39,7 +39,7 @@ export const getMyStudents = async (req: AuthRequest, res: Response) => {
         model: "User"
       });
 
-    
+    // [MÃ 200]: Thành công nhưng danh sách rỗng
     if (!courses || courses.length === 0) {
       return res.status(200).json({
           success: true,
@@ -99,11 +99,12 @@ export const getMyStudents = async (req: AuthRequest, res: Response) => {
   } catch (err) {
     logError("[TEACHER] getMyStudents error:", err);
     
-    
+    // [MÃ 500]: Lỗi Server (Internal Server Error)
+    // Trả JSON rõ ràng để Frontend biết mà báo lỗi
     return res.status(500).json({
         success: false,
         message: "Internal Server Error",
-        error: err 
+        error: err // Có thể bỏ dòng này nếu không muốn lộ lỗi chi tiết ra ngoài
     });
   }
 };

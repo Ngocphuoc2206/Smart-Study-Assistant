@@ -30,6 +30,9 @@ function Header() {
     logout();
     router.push("/login"); // Chuyển về trang login
   };
+
+  // ✨ Kiểm tra vai trò
+  const showChatButton = user?.role === 'student';
   
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -49,14 +52,17 @@ function Header() {
 
         {/* Actions bên phải */}
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={openChat}
-            aria-label="Mở Chat"
-          >
-            <Bot className="h-5 w-5" />
-          </Button>
+          {/* ✨ Ẩn/hiện nút Chat dựa trên vai trò */}
+          {showChatButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={openChat}
+              aria-label="Mở Chat"
+            >
+              <Bot className="h-5 w-5" />
+            </Button>
+          )}
           
           {/* Avatar (Giờ lấy từ store) */}
           <Avatar className="h-9 w-9">

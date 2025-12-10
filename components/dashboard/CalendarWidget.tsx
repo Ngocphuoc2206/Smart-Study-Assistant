@@ -1,22 +1,31 @@
-// components/dashboard/CalendarWidget.tsx
 "use client";
 
 import React, { useState, useMemo } from "react";
 import { StudyEvent } from "@/lib/types";
 import { formatEventTime } from "@/lib/utils";
-import { useEvents } from "@/lib/hooks/useEvents";
-import { addMonths, endOfMonth, endOfWeek, startOfMonth, startOfToday, startOfWeek, format } from "date-fns";
+import { useEvents } from "@/lib/hooks/useEvents"; // Hook từ P1
+import { 
+  endOfMonth, 
+  endOfWeek, 
+  startOfMonth, 
+  startOfToday, 
+  startOfWeek, 
+  format 
+} from "date-fns";
 import { vi } from "date-fns/locale";
 import { DayContentProps } from "react-day-picker";
 
-// Import UI từ shadcn
+// Import UI
 import { Calendar } from "@/components/ui/calendar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Helper lấy khoảng thời gian
+// ✨ Import component WeekView mới
+import { WeekView } from "./WeekView"; 
+
+// Helper lấy khoảng thời gian (giữ nguyên)
 const getWeekRange = (date: Date) => ({
   from: startOfWeek(date, { locale: vi }),
   to: endOfWeek(date, { locale: vi }),
@@ -28,9 +37,8 @@ const getMonthRange = (date: Date) => ({
 
 export function CalendarWidget() {
   const [view, setView] = useState<"month" | "week">("month");
-  // `currentDate` dùng để điều khiển tháng/tuần đang xem (cho query)
+  // 'currentDate' giờ đây là ngày đại diện cho tháng (view=month) hoặc tuần (view=week)
   const [currentDate, setCurrentDate] = useState(new Date()); 
-  // `selectedDate` là ngày user click vào
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(startOfToday());
 
   // Xác định khoảng thời gian query dựa trên view
@@ -38,65 +46,59 @@ export function CalendarWidget() {
     return view === 'month' ? getMonthRange(currentDate) : getWeekRange(currentDate);
   }, [view, currentDate]);
 
+  // Hook 'useEvents' (từ P1) sẽ tự động fetch lại khi 'range' thay đổi
   const { data: events, isLoading, isError } = useEvents(range);
 
-  // Lọc sự kiện cho ngày được chọn
+  // Lọc sự kiện cho danh sách bên dưới (luôn hoạt động)
   const eventsForSelectedDay = useMemo(() => {
     if (!selectedDate || !events) return [];
-    // ✅ ĐÃ SỬA: Dùng 'format' để giữ đúng ngày local
     const selectedISO = format(selectedDate, "yyyy-MM-dd");
+    // Lọc từ 'events' (đã là dữ liệu của tuần hoặc tháng)
     return events.filter(e => e.date === selectedISO);
   }, [selectedDate, events]);
 
   // Xử lý khi đổi tháng/tuần trên lịch
-  const handleMonthChange = (month: Date) => {
-    setCurrentDate(month);
-    // Khi đổi tháng, tự động chọn ngày 1
+  const handleDateChange = (date: Date) => {
+    setCurrentDate(date);
+    // Tự động chọn ngày đầu tiên của view mới
     if (view === 'month') {
-      setSelectedDate(month);
+      setSelectedDate(startOfMonth(date));
     } else {
-      setSelectedDate(startOfWeek(month, { locale: vi }));
+      setSelectedDate(startOfWeek(date, { locale: vi }));
     }
-  };
-
-  // Custom component để render dot (Yêu cầu 6)
-  const DayWithDot = ({ date, displayMonth }: DayContentProps) => {
-    // Chỉ render dot cho các ngày trong tháng hiện tại
-    if (date.getMonth() !== displayMonth.getMonth()) {
-      return <>{date.getDate()}</>;
-    }
-    
-    const dayISO = date.toISOString().split('T')[0];
-    const eventsForDay = events?.filter(e => e.date === dayISO) || [];
-    
-    return (
-      <div className="relative w-full h-full flex items-center justify-center">
-        {date.getDate()}
-        {eventsForDay.length > 0 && (
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex space-x-0.5">
-            {eventsForDay.slice(0, 2).map((e) => (
-               <span key={e.id} className="h-1 w-1 rounded-full" style={{ backgroundColor: e.course?.color || '#9ca3af' }} />
-            ))}
-            {eventsForDay.length > 2 && <span className="h-1 w-1 rounded-full bg-gray-300" />}
-          </div>
-        )}
-      </div>
-    );
   };
   
-  // shadcn/ui <Calendar> không có view "tuần" thực thụ.
-  // Chúng ta sẽ dùng Tabs để *thay đổi query* (theo tuần/tháng)
-  // và hiển thị lịch tháng (vì nó trực quan nhất).
-  const calendarView = (
+  // Xử lý khi chỉ đổi ngày chọn
+  const handleSelectDate = (date: Date | undefined) => {
+      if(date) {
+        setSelectedDate(date);
+      }
+  };
+
+  // --- Component Lịch Tháng ---
+  // (Chúng ta sẽ tắt 'DayWithDot' vì nó gây nhầm lẫn khi
+  // 'events' không chứa đủ dữ liệu của cả tháng)
+  const calendarMonthView = (
     <Calendar
       mode="single"
       selected={selectedDate}
-      onSelect={setSelectedDate}
+      onSelect={handleSelectDate}
       month={currentDate}
-      onMonthChange={handleMonthChange}
+      onMonthChange={handleDateChange} // Dùng handler chung
       locale={vi}
-      className="rounded-md"
-      components={{ DayContent: DayWithDot }}
+      className="rounded-md border"
+      // components={{ DayContent: DayWithDot }} // Tắt để tránh lỗi logic
+    />
+  );
+  
+  // --- Component Lịch Tuần (Mới) ---
+  const calendarWeekView = (
+    <WeekView
+      currentDate={currentDate}
+      events={events || []}
+      selectedDate={selectedDate}
+      onSelectDate={handleSelectDate}
+      onDateChange={handleDateChange} // Dùng handler chung
     />
   );
 
@@ -108,11 +110,14 @@ export function CalendarWidget() {
             <TabsTrigger value="month">Lịch tháng</TabsTrigger>
             <TabsTrigger value="week">Lịch tuần</TabsTrigger>
           </TabsList>
-          {/* Chúng ta chỉ render 1 Calendar, việc đổi Tab chỉ trigger đổi data (range) */}
-          {calendarView}
+          
+          {/* ✨ Tự động đổi giao diện dựa trên tab */}
+          {isLoading && <Skeleton className="h-[300px] w-full" />}
+          {!isLoading && view === 'month' ? calendarMonthView : null}
+          {!isLoading && view === 'week' ? calendarWeekView : null}
         </Tabs>
         
-        {/* Danh sách sự kiện cho ngày đã chọn */}
+        {/* Danh sách sự kiện cho ngày đã chọn (phần này giữ nguyên) */}
         <div className="mt-4 border-t pt-4">
           <h4 className="font-semibold mb-3">
             Sự kiện ngày {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: vi }) : '...'}
@@ -141,12 +146,10 @@ export function CalendarWidget() {
   );
 }
 
-// Component phụ cho item bên dưới Calendar
+// Component phụ cho item bên dưới Calendar (giữ nguyên)
 function EventRow({ event }: { event: StudyEvent }) {
    return (
-    <li className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted cursor-pointer"
-        // onClick={() => onSelectEvent(event)} // Sẽ thêm sau
-    >
+    <li className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted cursor-pointer">
       {event.course && (
         <span
           className="h-2.5 w-2.5 rounded-full flex-shrink-0"

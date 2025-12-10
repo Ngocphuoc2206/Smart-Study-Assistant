@@ -5,8 +5,8 @@ export type ChatRole = 'user' | 'assistant';
 export interface IChatMessage extends Document {
     user: Types.ObjectId;
     role: ChatRole;
-    content: String;
-    intent?: String;
+    content: string;
+    intent?: string;
     createdAt: Date;
     updatedAt: Date;
 }

@@ -3,11 +3,11 @@ import {Schema, model, Document} from "mongoose";
 export type UserRole = "student" | "teacher" | "admin";
 
 export interface IUser extends Document{
-    firstName: String;
-    lastName: String;
-    email: String;
-    passwordHash: String;
-    avatarUrl?: String;
+    firstName: string;
+    lastName: string;
+    email: string;
+    passwordHash: string;
+    avatarUrl?: string;
     createdAt: Date;
     updatedAt: Date;
     role: UserRole;

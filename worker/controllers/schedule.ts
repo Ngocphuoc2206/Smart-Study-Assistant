@@ -1,9 +1,12 @@
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Schedule } from "../models/schedule";
 import { logDebug } from "../utils/logger";
 import { populate } from "dotenv";
 import { Course } from "../models/course";
+import * as ReminderService from "../services/reminderService";
 
 //Post /schedules
 export const createSchedule = async (req: AuthRequest, res: Response) => {
@@ -15,7 +18,7 @@ export const createSchedule = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        const { course, title, type, startTime, endTime, location, notes } =
+        const { course, title, type, startTime, endTime, location, notes, reminders } =
             req.body;
 
         if (!course || !title || !startTime) {
@@ -34,7 +37,18 @@ export const createSchedule = async (req: AuthRequest, res: Response) => {
             endTime,
             location,
             notes,
+            reminders,
         });
+
+        //Create reminder docs
+        const reminderDocs = ReminderService.buildForSchedule({
+            userId: req.user.userId,
+            scheduleId: newSchedule._id.toString(),
+            title: newSchedule.title,
+            startTime: newSchedule.startTime,
+            reminders,
+          });
+        await ReminderService.createMany(reminderDocs as any[]);
         logDebug("New schedule created: ", newSchedule);
 
         return res.status(201).json({
@@ -131,7 +145,6 @@ export const updateSchedule = async (req: AuthRequest, res: Response) => {
         });
     } catch (error: any) {
         logDebug("Error updating schedule: ", error);
-
         if (error.name === "ValidationError") {
             return res.status(400).json({
                 success: false,
@@ -139,7 +152,6 @@ export const updateSchedule = async (req: AuthRequest, res: Response) => {
                 error: error.message,
             });
         }
-
         return res.status(500).json({
             success: false,
             message: "Internal Server Error",
@@ -170,6 +182,9 @@ export const deleteSchedule = async (req: AuthRequest, res: Response) => {
                 message: "Schedule not found or unauthorized",
             });
         }
+        //Delete reminder
+        await ReminderService.deleteBySchedule(req.user.userId, id);
+
 
         return res.status(200).json({
             success: true,

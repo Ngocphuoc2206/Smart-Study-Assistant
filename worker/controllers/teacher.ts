@@ -1,3 +1,5 @@
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Course } from "../models/course";
@@ -24,7 +26,7 @@ export const getMyStudents = async (req: AuthRequest, res: Response) => {
     logDebug(`[TEACHER] getMyStudents request by: ${teacherId}`, { courseId, search });
 
     // 1. Tạo bộ lọc
-    let courseFilter: any = { teacher: teacherId };
+    const courseFilter: any = { teacher: teacherId };
     
     if (courseId && typeof courseId === 'string') {
         courseFilter._id = courseId; 

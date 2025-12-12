@@ -82,3 +82,9 @@ export function mapIntentName(raw: string): VNIntentName {
     return out;
   }
 //#endregion
+
+//#region Reminder
+export type ReminderChannel = "Email" | "In-app" | "email" | "inapp";
+export type ReminderInput = number | {offsetSec: number; channel?: ReminderChannel}
+export type NormalizedReminder = { offsetSec: number; channel: "Email" | "In-app" };
+//#endregion

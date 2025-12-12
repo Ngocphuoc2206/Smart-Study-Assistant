@@ -1,3 +1,4 @@
+/* eslint-disable no-var */
 import express from "express";
 import cors from "cors";
 import { connectDB } from "./config/db";
@@ -17,6 +18,7 @@ import nlpRouter from "./routes/nlp";
 import courseRouter from "./routes/course";
 import chatHistoryRouter from "./routes/chatHistory";
 import teacherRouter from "./routes/teacher";
+import remindRouter from "./routes/reminder";
 //Configure env from file env
 dotenv.config();
 
@@ -51,6 +53,7 @@ export const createApp = async () => {
   app.use("/api/course", courseRouter);
   app.use("/api/chat-history", chatHistoryRouter);
   app.use("/api/teacher", teacherRouter);
+  app.use("/api/reminder", remindRouter);
   app.get("/api/version", (req, res) => {
     res.json({
       version: process.env.API_VERSION,

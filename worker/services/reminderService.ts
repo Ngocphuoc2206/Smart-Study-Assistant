@@ -48,6 +48,33 @@ export const buildForTask = (args: {
     }).filter(Boolean);
 }
 
+export const buildForSchedule = (args: {
+    userId: string;
+    scheduleId: string;
+    title: string;
+    startTime: Date;
+    reminders?: ReminderInput[];
+}) => {
+    const list = normalizeInputs(args.reminders);
+    const base = new Date(args.startTime);
+    const seen = new Set<string>();
+    return list.map((r) => {
+        const remindAt = new Date(base.getTime() + r.offsetSec * 1000);
+        const key = `${remindAt.toISOString()}|${r.channel}`;
+        if (seen.has(key)) return null;
+        seen.add(key);
+        return {
+            user: new Types.ObjectId(args.userId),
+            schedule: new Types.ObjectId(args.scheduleId),
+            title: args.title,
+            remindType: "SCHEDULED" as const,
+            remindAt,
+            channel: r.channel,
+            status: "PENDING" as const
+        }
+    }).filter(Boolean);
+}
+
 export const createMany = async (docs: any[]) => {
     if (!docs.length) return [];
     try {

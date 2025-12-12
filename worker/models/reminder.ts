@@ -81,4 +81,16 @@ reminderSchema.pre("validate", function (next) {
     next();
 })
 
+//Unique index: avoid duplicate remindAt
+reminderSchema.index(
+    { user: 1, task: 1, remindAt: 1, channel: 1 },
+    { unique: true, partialFilterExpression: { task: { $exists: true, $type: "objectId" } } }
+);
+
+reminderSchema.index(
+    { user: 1, scheduler: 1, remindAt: 1, channel: 1},
+    { unique: true, partialFilterExpression: { schedule: { $exists: true, $type: "objectId" } } }
+);
+
+reminderSchema.index({ user: 1, status: 1, remindAt: 1 });
 export const Reminder = model<IReminder>('Reminder', reminderSchema);

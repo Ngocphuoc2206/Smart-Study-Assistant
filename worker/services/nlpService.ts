@@ -74,7 +74,7 @@ export function generateResponse(intent: DetectedIntent): string{
           `Mình cần thêm ${need.map(n => `**${n}**`).join(', ')} để thực hiện nhé. ` +
           `Bạn có thể nói kiểu: “${name === 'add_event'
             ? 'Thêm [loại] [tên] vào [ngày] [giờ], nhắc trước [thời gian]'
-            : 'Tìm sự kiện [tên/loại] vào [ngày] [giờ]'}”.`
+            : 'Tìm sự kiện  [tên/loại] vào [ngày] [giờ]'}”.`
         );
     switch (name){
         case 'add_event':{
@@ -252,6 +252,7 @@ function mapVietnameseDateToEnglish(text: string): string {
 }
 // #issue 8
 export interface ExtractedEntities {
+    userId: string;
     datetime?: Date;
     title?: string;
     course?: string; //issue #23
@@ -333,7 +334,8 @@ export const NLPService = {
             reminderOffset: 0,
             title: "",
             type: "other",
-            course: undefined //(issue #23)
+            course: undefined, //(issue #23)
+            userId: ""
         };
 
         try {
@@ -462,5 +464,6 @@ export const NLPService = {
             logError("[NLPService] Error extracting entities:", error);
             return entities; 
         }
-    }
+    },
+    generateResponse: generateResponse,
 }

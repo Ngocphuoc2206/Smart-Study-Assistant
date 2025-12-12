@@ -252,9 +252,10 @@ function mapVietnameseDateToEnglish(text: string): string {
 }
 // #issue 8
 export interface ExtractedEntities {
+    userId: string;
     datetime?: Date;
     title?: string;
-    course?: string; //issue #23
+    course?: string | null; //issue #23
     reminderOffset?: number;
     type?: 'exam' | 'lecture' | 'other' | 'assignment';
 }
@@ -333,7 +334,8 @@ export const NLPService = {
             reminderOffset: 0,
             title: "",
             type: "other",
-            course: undefined //(issue #23)
+            course: null, //(issue #23)
+            userId: ""
         };
 
         try {
@@ -462,5 +464,6 @@ export const NLPService = {
             logError("[NLPService] Error extracting entities:", error);
             return entities; 
         }
-    }
+    },
+    generateResponse: generateResponse,
 }

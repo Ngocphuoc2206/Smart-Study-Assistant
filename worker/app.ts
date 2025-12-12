@@ -53,7 +53,7 @@ export const createApp = async () => {
   app.use("/api/course", courseRouter);
   app.use("/api/chat-history", chatHistoryRouter);
   app.use("/api/teacher", teacherRouter);
-  app.use("/api/reminder", remindRouter);
+  app.use("/api/remind", remindRouter);
   app.get("/api/version", (req, res) => {
     res.json({
       version: process.env.API_VERSION,

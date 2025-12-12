@@ -19,6 +19,7 @@ import courseRouter from "./routes/course";
 import chatHistoryRouter from "./routes/chatHistory";
 import teacherRouter from "./routes/teacher";
 import remindRouter from "./routes/reminder";
+import chatRouter from "./routes/chat";
 //Configure env from file env
 dotenv.config();
 
@@ -54,6 +55,7 @@ export const createApp = async () => {
   app.use("/api/chat-history", chatHistoryRouter);
   app.use("/api/teacher", teacherRouter);
   app.use("/api/remind", remindRouter);
+  app.use("/api/chat", chatRouter);
   app.get("/api/version", (req, res) => {
     res.json({
       version: process.env.API_VERSION,

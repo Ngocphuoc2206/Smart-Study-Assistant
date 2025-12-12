@@ -30,9 +30,11 @@ export type VNEntities = {
     date?: string; // YYYY-MM-DD
     timeStart?: string; // HH:mm
     timeEnd?: string;
+    course?: string;
     courseName?: string;
     location?: string;
     reminder?: number[];
+    reminderOffset?: number;
     missingEntities?: string[];
 }
 
@@ -55,7 +57,8 @@ export function mapIntentName(raw: string): VNIntentName {
   }
 
   const pad2 = (n: number) => String(n).padStart(2, "0");
-  const toHHmm = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  //const toHHmm = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  const toHHmm = (d: Date) => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
   const toYYYYMMDD = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NormalizedReminder, ReminderChannel, ReminderInput } from "@/shared/type";
-import { Types } from "mongoose";
+import { Schema, Types } from "mongoose";
 import { Reminder } from "../models/reminder";
 import { logDebug } from "../utils/logger";
 
@@ -21,7 +21,7 @@ const normalizeInputs = (reminders?: ReminderInput[]): NormalizedReminder[] => {
   };
 
 export const buildForTask = (args: {
-    userId: string;
+    userId?: string;
     taskId: string;
     title: string;
     dueDate: Date;
@@ -38,18 +38,18 @@ export const buildForTask = (args: {
         if (seen.has(key)) return null;
         seen.add(key);
         return {
-            user: new Types.ObjectId(args.userId),
+            user: args.userId,
             task: new Types.ObjectId(args.taskId),
             title: args.title,
             remindAt,
             channel: r.channel,
-            status: "PENDING" as const
+            status: "PENDING"
         };
     }).filter(Boolean);
 }
 
 export const buildForSchedule = (args: {
-    userId: string;
+    userId?: string;
     scheduleId: string;
     title: string;
     startTime: Date;
@@ -64,7 +64,7 @@ export const buildForSchedule = (args: {
         if (seen.has(key)) return null;
         seen.add(key);
         return {
-            user: new Types.ObjectId(args.userId),
+            user: args.userId,
             schedule: new Types.ObjectId(args.scheduleId),
             title: args.title,
             remindType: "SCHEDULED" as const,

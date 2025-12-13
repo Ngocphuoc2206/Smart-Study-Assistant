@@ -1,6 +1,6 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
-export type ScheduleType = 'lecture' | 'exam' | 'other';
+export type ScheduleType = 'lecture' | 'exam' | 'assignment' | 'other';
 
 export interface ISchedule extends Document {
     user: Types.ObjectId;
@@ -42,8 +42,8 @@ const schedueSchema = new Schema<ISchedule>({
     },
     type: {
         type: String,
-        enum: ['lecture', 'exam', 'other'],
-        default: 'lecture',
+        enum: ['lecture', 'exam', 'assignment','other'],
+        default: 'assignment',
     },
     startTime: {
         type: Date,

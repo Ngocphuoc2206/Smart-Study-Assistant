@@ -32,12 +32,15 @@ export const detectIntentHandler = async (req: AuthRequest, res: Response) => {
       name,
       entities,
     }
+    const needChannel = Array.isArray(detected.entities?.reminder) 
+    && detected.entities?.reminder.length > 0 
+    && !detected.entities?.remindChannel;
     //Check pendingItent & pendingEntities && has selectedChannel
-    if (pendingIntent === "create_task" && pendingEntities && selectedChannel){
+    if ((pendingIntent === "create_task" || pendingIntent === "add_event") && pendingEntities && selectedChannel){
       const merged = {...pendingEntities, reminderChannel: selectedChannel, userId: userId ?? ""}
-      const actionResult = await NLPActionHandler.handleAction("create_task" as VNIntentName, merged);
+      const actionResult = await NLPActionHandler.handleAction(pendingIntent as VNIntentName, merged);
       const responseText = actionResult?.success ? 
-      `Ok, mình sẽ nhắc bạn qua **${selectedChannel}**. Mình đã tạo task rồi nhé!` 
+      `Ok, mình sẽ nhắc bạn qua **${selectedChannel}**. Mình đã ${pendingIntent === "create_task" ? "tạo task" : "đặt lịch"} rồi nhé!` 
       : actionResult?.message || "Không thể tạo task, vui lòng thử lại!";
       return res.status(200).json({
         success: true,
@@ -51,10 +54,7 @@ export const detectIntentHandler = async (req: AuthRequest, res: Response) => {
       })
     }
     //Check if doesn't has selectedchannel
-    if (detected.name === "create_task" 
-      && Array.isArray(detected.entities?.reminder) 
-      && detected.entities?.reminder.length > 0 
-      && !detected.entities?.remindChannel){
+    if (needChannel && (detected.name === "create_task" || detected.name === "add_event")){
         return res.status(200).json({
           success: true,
           data: {
@@ -70,25 +70,6 @@ export const detectIntentHandler = async (req: AuthRequest, res: Response) => {
           }
         })
       }
-
-    let actionResult = null;
-    const autoCreateIntents = ["add_event", "add_events"];
-    if (autoCreateIntents.includes(detected.name as VNIntentName)) {
-      actionResult = await NLPActionHandler.handleAction(detected.name as VNIntentName, detected.entities);
-    }
-
-    const responseText = generateResponse(detected);
-    logDebug("[NLPController] detectIntent response", { responseText, actionResult });
-    return res.status(200).json({
-      success: true,
-      data: {
-        intent: detected.name,
-        responseText,
-        entities: detected.entities,
-        actionResult,
-        extractedEntities: extracted,
-      },
-    });
   } catch (error) {
     logDebug("[NLPController] Error detecting intent: ", error);
     return res.status(500).json({

@@ -69,7 +69,7 @@ export const handleChatMessage = async (req: AuthRequest, res: Response) => {
 
     // B4: Lưu Bot Message & Trả về
     await ChatMessage.create({ 
-        user: userId, 
+        user: userId,
         role: "assistant", 
         content: botReply,
         intent: intentName

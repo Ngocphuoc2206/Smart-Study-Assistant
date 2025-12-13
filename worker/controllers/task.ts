@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Task } from "../models/task";
 import { logDebug } from "../utils/logger";
+import * as ReminderService from "../services/reminderService";
 
 // POST /task
 export const createTask = async(req: AuthRequest, res: Response) => {
@@ -11,10 +12,20 @@ export const createTask = async(req: AuthRequest, res: Response) => {
         if (!userId){
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
+        const { reminders, ...taskPayload} = req.body;
         const task = await Task.create({
-            ...req.body,
+            ...taskPayload,
             user: userId,
         });
+        //Create Reminders if provided
+        const reminderDocs = ReminderService.buildForTask({
+            userId: userId,
+            taskId: task._id.toString(),
+            title: task.title,
+            dueDate: task.dueDate,
+            reminders,
+        })
+        await ReminderService.createMany(reminderDocs as []);
         return res.status(201).json({
             success: true,
             data: task
@@ -90,6 +101,7 @@ export const deleteTask = async(req: AuthRequest, res: Response) => {
             user: req.user?.userId
         });
         if (!task) return res.status(404).json({ success: false, message: "Task not found" });
+        await ReminderService.deleteByTask(req.user?.userId as string, req.params.id);
         return res.status(200).json({
             success: true,
             data: task

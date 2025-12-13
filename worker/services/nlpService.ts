@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { DetectedIntent, IntentConfig, RootConfig } from "@/shared/type";
+import { DetectedIntent, IntentConfig, ReminderChannel, RootConfig } from "@/shared/type";
 import { logDebug, logError } from "../utils/logger";
 import { classifyIntentLLM } from "./llmIntentService";
 // Import chrono-node(#issue 8)
@@ -258,6 +258,7 @@ export interface ExtractedEntities {
     course?: string | null; //issue #23
     reminderOffset?: number;
     type?: 'exam' | 'lecture' | 'other' | 'assignment';
+    reminderChannel?: ReminderChannel;
 }
 
 //Cal score for intent
@@ -394,7 +395,7 @@ export const NLPService = {
             // 3. Xử lý Môn học(issue #23) 
             // Bắt theo cụm "môn|lớp|học phần ..."
             const courseRegex =
-            /(?:môn|lớp|học phần)\s+([a-zA-ZđĐáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ\d\s]+?)(?=\s*(?:vào|lúc|ngày|mai|thứ|sáng|chiều|tối|$))/i;
+            /(?:môn|lớp|học phần|nộp|bài tập|deadline)\s+([a-zA-ZđĐáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ\d\s]+?)(?=\s*(?:vào|lúc|ngày|mai|thứ|sáng|chiều|tối|$))/i;
 
             const courseMatch = text.match(courseRegex);
             if (courseMatch?.[1]) {
@@ -420,7 +421,8 @@ export const NLPService = {
 
             // 3. Event Type (Extract Type) 
             const lowerText = text.toLowerCase();
-
+            if (/(email|gmail|mail)/.test(lowerText)) entities.reminderChannel = "Email";
+            if (/(in[\s-]?app|ứng dụng|app)/.test(lowerText)) entities.reminderChannel = "In-app";
             if (/(thi|kỳ thi|kiểm tra|test|exam|midterm|final)/.test(lowerText)) {
                 entities.type = "exam";
             } else if (/(bài tập|deadline|đồ án|assignment|nộp|homework|project)/.test(lowerText)) {

@@ -36,6 +36,7 @@ export type VNEntities = {
     reminder?: number[];
     reminderOffset?: number;
     missingEntities?: string[];
+    remindChannel?: ReminderChannel;
 }
 
 export type DetectedIntent = {

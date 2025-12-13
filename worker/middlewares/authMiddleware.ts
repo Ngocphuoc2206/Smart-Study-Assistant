@@ -5,7 +5,6 @@ const EXCEPT_PATHS = [
   "/api/auth/login", 
   "/api/auth/register",
   "/api/auth/me",
-  "/api/nlp/detect-intent",
 ];
 
 export interface AuthRequest extends Request {

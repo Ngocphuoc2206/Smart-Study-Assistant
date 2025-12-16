@@ -33,6 +33,17 @@ function Header() {
 
   // ✨ Kiểm tra vai trò
   const showChatButton = user?.role === 'student';
+  // Tạo initials an toàn từ firstName/lastName/email để tránh lỗi substring trên undefined
+  const initials = (() => {
+    if (!user) return "";
+    const f = (user.firstName || "").toString().trim();
+    const l = (user.lastName || "").toString().trim();
+    if (f && l) return (f[0] + l[0]).toUpperCase();
+    if (f) return f.substring(0, 2).toUpperCase();
+    if (l) return l.substring(0, 2).toUpperCase();
+    if (user.email) return user.email.substring(0, 2).toUpperCase();
+    return "";
+  })();
   
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -66,8 +77,8 @@ function Header() {
           
           {/* Avatar (Giờ lấy từ store) */}
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user?.avatar} alt={user?.username} />
-            <AvatarFallback>{user?.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={user?.avatarUrl || user?.avatar} alt={user?.email || user?.firstName || 'avatar'} />
+            <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           
           {/* Nút Logout */}

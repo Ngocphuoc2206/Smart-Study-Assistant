@@ -93,6 +93,12 @@ export const login = async(req: Request, res: Response) => {
         }
         //Assign token
         const accessToken = signAccessToken({userId: existingUser._id.toString(), role: existingUser.role});
+        // Set session user for cookie-based sessions
+        try {
+            (req as any).session.user = { userId: existingUser._id.toString() };
+        } catch (e) {
+            // ignore if session not configured
+        }
         logDebug("User logged in with data: ", existingUser);
         return res.status(200).json({
             success: true,

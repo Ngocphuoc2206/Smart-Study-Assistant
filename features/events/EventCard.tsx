@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Bell, Clock, Edit, MapPin, MoreVertical, Trash2 } from "lucide-react";
 import { formatEventTime } from "@/lib/utils";
+import { useAuthStore } from "@/lib/hooks/useAuthStore";
 
 interface EventCardProps {
   event: StudyEvent;
@@ -26,7 +27,10 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
   const eventDateTime = new Date(`${event.date}T${event.timeStart}`);
   const formattedDate = format(eventDateTime, "E, dd/MM/yyyy", { locale: vi });
   const timeRange = `${formatEventTime(event.timeStart)}${event.timeEnd ? ` - ${formatEventTime(event.timeEnd)}` : ''}`;
-
+  // 👇 Lấy role của user
+  const { user } = useAuthStore();
+  // Kiểm tra: Chỉ hiện nút 3 chấm nếu là Giáo viên (teacher) hoặc Admin
+  const canEdit = user?.role === 'teacher';
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">

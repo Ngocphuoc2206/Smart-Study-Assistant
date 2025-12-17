@@ -6,9 +6,9 @@ import { Course } from "@/lib/types";
 import api from "@/lib/api";
 import { de } from "chrono-node";
 
-// Vì BE chưa trả về eventCount, ta định nghĩa type trùng với Course
+// Because BE none return eventCount, define type similar to Course
 export type CourseWithEventCount = Course & {
-  eventCount?: number; // Cho phép undefined hoặc 0
+  eventCount?: number; // Allow undefined or 0
 };
 
 const fetchCourses = async (): Promise<CourseWithEventCount[]> => {

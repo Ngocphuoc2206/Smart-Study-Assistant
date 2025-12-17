@@ -20,14 +20,14 @@ const combineDateTime = (dateStr: string | Date | undefined, timeStr: string | u
     return newDate.toISOString();
 }
 
-// --- 1. TẠO MỚI (Create) ---
+// --- 1.(Create) ---
 const createEventAPI = async ({ eventData }: any) => {
   const payload = {
     title: eventData.title,
     type: eventData.type,
     location: eventData.location,
     courseId: eventData.courseId,
-    // Chuyển đổi format FE -> BE
+    // convert format FE -> BE
     startTime: combineDateTime(eventData.date, eventData.timeStart),
     endTime: eventData.timeEnd ? combineDateTime(eventData.date, eventData.timeEnd) : undefined,
   };
@@ -51,21 +51,19 @@ export const useCreateEventMutation = () => {
   });
 };
 
-// --- 2. CẬP NHẬT (Update) - Phần còn thiếu ---
+// --- 2. (Update)  ---
 type UpdateEventData = {
     id: string;
-    data: any; // Dữ liệu từ form
-    reminders?: any[]; // (Backend chưa xử lý cái này, nhưng giữ tham số để không lỗi form)
+    data: any; // Data from form
+    reminders?: any[]; // 
 }
 
 const updateEventAPI = async ({ id, data }: UpdateEventData) => {
-    // Chuẩn bị payload, chỉ gửi những gì thay đổi hoặc gửi đè
     const payload = {
         title: data.title,
         type: data.type,
         location: data.location,
         courseId: data.courseId,
-        // Nếu có date/time mới thì tính lại startTime/endTime
         ...(data.date && data.timeStart && { 
             startTime: combineDateTime(data.date, data.timeStart) 
         }),
@@ -93,7 +91,7 @@ export const useUpdateEventMutation = () => {
     });
 };
 
-// --- 3. XÓA (Delete) ---
+// --- 3.(Delete) ---
 export const useDeleteEventMutation = () => {
     const queryClient = useQueryClient();
     return useMutation({

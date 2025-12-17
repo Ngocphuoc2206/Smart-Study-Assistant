@@ -272,12 +272,10 @@ export const getCourseStudents = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
 
-        // 1. Tìm khóa học theo ID
-        // .populate('students') là mấu chốt: Nó giúp biến mảng ID [ "user1", "user2" ]
-        // thành mảng Object chi tiết [ { _id: "user1", name: "An" }, ... ]
+        // 1. Find course by ID
         const course = await Course.findById(id).populate({
             path: 'students',
-            select: 'firstName lastName email avatarUrl code' // 👈 Chỉ lấy các trường cần thiết, bỏ qua password
+            select: 'firstName lastName email avatarUrl code' 
         });
 
         if (!course) {
@@ -287,8 +285,8 @@ export const getCourseStudents = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        // 2. (Tùy chọn) Kiểm tra quyền: Chỉ giáo viên của khóa học mới được xem danh sách
-        // Nếu bạn muốn Admin xem được thì thêm điều kiện OR
+        // 2. Check permission: only teacher of the course can view student list
+        
         if (req.user && (req.user as any)?.role === 'teacher' && course.teacher.toString() !== req.user.userId) {
              return res.status(403).json({ 
                  success: false, 
@@ -296,7 +294,7 @@ export const getCourseStudents = async (req: AuthRequest, res: Response) => {
              });
         }
 
-        // 3. Trả về danh sách sinh viên
+        // 3. Return student list
         return res.status(200).json({
             success: true,
             count: course.students.length, 

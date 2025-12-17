@@ -3,10 +3,10 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Course } from "@/lib/types";
-import api from "@/lib/api"; // Dùng api client đã cấu hình
+import api from "@/lib/api"; 
 import { toast } from "sonner";
 
-// Type cho dữ liệu gửi lên (bỏ id vì BE tự tạo)
+// Type for data input (without 'id')
 type CourseInput = Omit<Course, 'id'>;
 
 // --- API CLIENT ---
@@ -29,10 +29,10 @@ const deleteCourseAPI = async (id: string) => {
 export const useCourseMutations = () => {
   const queryClient = useQueryClient();
   
-  // Hàm làm mới data sau khi sửa đổi
+  
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['course'] });
-    // Refresh cả events vì event có chứa thông tin course (màu sắc, tên...)
+    
     queryClient.invalidateQueries({ queryKey: ['events'] });
   };
 

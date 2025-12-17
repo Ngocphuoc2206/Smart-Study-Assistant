@@ -63,7 +63,7 @@ const notificationSchema = new Schema<INotification>({
     },
     deliveryStatus: {
         type: String,
-        enum: ['PENDING', 'SENT', 'FAILED'],
+        enum: ['PENDING', 'DONE', 'OVERDUE'],
         default: 'PENDING',
     },
     deliveryAt: {

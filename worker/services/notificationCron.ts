@@ -48,7 +48,7 @@ export async function generateNotificationFromRemiders() {
             await emitNotification(id);
             await Reminder.updateOne(
                 { _id: id},
-                {$set: {isSent: true, deliveryAt: now, deliveryStatus: "SENT"}},
+                {$set: {isSent: true, sentAt: now, status: "DONE"}},
             );
         }
     }

@@ -89,3 +89,8 @@ export type ReminderChannel = "Email" | "In-app" | "email" | "inapp";
 export type ReminderInput = number | {offsetSec: number; channel?: ReminderChannel}
 export type NormalizedReminder = { offsetSec: number; channel: "Email" | "In-app" };
 //#endregion
+
+//#region Notification
+export type NotificationChannel = "Email" | "In-app";
+export type NotificationType = "TASK" | "SCHEDULE";
+//#endregion

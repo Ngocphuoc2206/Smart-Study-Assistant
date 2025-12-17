@@ -29,6 +29,9 @@ export const createApp = async () => {
 
   const app = express();
   //Parsing request body
+  app.use(cors());
+  app.use(requestId);
+
   app.use(express.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -40,10 +43,8 @@ export const createApp = async () => {
   app.use(morgan("combined", { stream: accessLogStream }))
 
   //#region Register Middleware
-  app.use(cors());
-  app.use(requestId);
+  
   app.use(authMiddleware);
-  app.use(errorHandler);
   //#endregion
 
   //Route
@@ -62,6 +63,7 @@ export const createApp = async () => {
       env: process.env.NODE_ENV,
     });
   });
+  app.use(errorHandler);
 
   return app;
 };

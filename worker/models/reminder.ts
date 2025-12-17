@@ -13,6 +13,8 @@ export interface IReminder extends Document {
     remindType: remindType;
     channel: channel;
     status: status;
+    isSent: boolean;
+    sentAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -58,6 +60,14 @@ const reminderSchema = new Schema<IReminder>({
         enum: ['PENDING', 'DONE', 'OVERDUE'],
         default: 'PENDING',
     },
+    isSent: {
+        type: Boolean,
+        default: false,
+    },
+    sentAt: {
+        type: Date,
+        required: false,
+    },
     createdAt: {
         type: Date,
         default: Date.now,
@@ -88,9 +98,11 @@ reminderSchema.index(
 );
 
 reminderSchema.index(
-    { user: 1, scheduler: 1, remindAt: 1, channel: 1},
+    { user: 1, schedule: 1, remindAt: 1, channel: 1},
     { unique: true, partialFilterExpression: { schedule: { $exists: true, $type: "objectId" } } }
 );
+
+reminderSchema.index({isSent: 1, remindAt: 1});
 
 reminderSchema.index({ user: 1, status: 1, remindAt: 1 });
 export const Reminder = model<IReminder>('Reminder', reminderSchema);

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Course } from "../models/course";
@@ -6,7 +7,7 @@ import { logDebug } from "../utils/logger";
 // POST /api/courses
 export const createCourse = async (req: AuthRequest, res: Response) => {
     try {
-        const { userId } = req.params;
+        
         // 1. Check Auth
         if (!req.user?.userId) {
             return res.status(401).json({
@@ -27,7 +28,7 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
 
         // 3. Create Course
         const newCourse = await Course.create({
-            teacher: req.user.userId,
+            teacher: req.user?.userId,
             name,
             code,
             description,

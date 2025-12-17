@@ -21,6 +21,7 @@ const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunctio
 
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.log("401 FROM AUTH MIDDLEWARE: missing/invalid header");
     return res.status(401).json({ message: "Unauthorized" });
   }
 
@@ -30,7 +31,8 @@ const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunctio
     req.user = { userId: decoded.userId };
     next();
   } catch (error) {
-    return res.status(401).json({success: false, message: "Token not valid" });
+    console.log("401 FROM AUTH MIDDLEWARE: token not valid", error);
+    return res.status(401).json({ success: false, message: "Token not valid" });
   }
 
 }

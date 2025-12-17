@@ -72,7 +72,7 @@ export const login = async(req: Request, res: Response) => {
         const {email, password} = req.body;
         //Check email and password is valid
         if (!email || !password) {
-            return res.json(400).json({
+            return res.status(400).json({
                 success: false,
                 message: "Email and password are required"
             });
@@ -110,9 +110,9 @@ export const login = async(req: Request, res: Response) => {
                     lastName: existingUser.lastName,
                     email: existingUser.email,
                     role: existingUser.role
-                }
-            },
-            accessToken
+                },
+                accessToken
+            }
         });
     }
     catch(error){

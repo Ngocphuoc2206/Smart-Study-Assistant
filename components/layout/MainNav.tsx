@@ -1,3 +1,4 @@
+// Smart-Study-Assistant/components/layout/MainNav.tsx
 "use client";
 
 import Link from "next/link";
@@ -10,15 +11,15 @@ import { useAuthStore } from "@/lib/hooks/useAuthStore";
 // Định nghĩa các link và vai trò được phép
 const routes = [
   // == Student & Lecturer ==
-  { href: "/dashboard", label: "Dashboard", roles: ["student", "lecturer"] },
-  { href: "/events", label: "Sự kiện", roles: ["student", "lecturer"] }, // Lịch học, Bài tập
-  { href: "/notifications", label: "Thông báo", roles: ["student", "lecturer"] },
+  { href: "/dashboard", label: "Dashboard", roles: ["student", "teacher"] },
+  { href: "/events", label: "Sự kiện", roles: ["student", "teacher"] }, // Lịch học, Bài tập
+  { href: "/notifications", label: "Thông báo", roles: ["student", "teacher"] },
   
   // == Lecturer Only ==
-  { href: "/courses", label: "Môn học", roles: ["lecturer"] }, 
-  { href: "/events/new", label: "Thêm sự kiện", roles: ["lecturer"] },
+  { href: "/courses", label: "Môn học", roles: ["teacher"] }, 
+  { href: "/events/new", label: "Thêm sự kiện", roles: ["teacher"] },
   // ✨ SỬA Ở ĐÂY: Thay "Tạo khóa học" bằng "Danh sách sinh viên"
-  { href: "/students", label: "Danh sách sinh viên", roles: ["lecturer"] }, 
+  { href: "/students", label: "Danh sách sinh viên", roles: ["teacher"] }, 
   
   // == ADMIN (Cập nhật mới) ==
   { href: "/admin", label: "Tổng quan", roles: ["admin"] },

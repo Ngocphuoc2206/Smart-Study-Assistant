@@ -5,53 +5,55 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useAuthStore, UserRole } from "@/lib/hooks/useAuthStore"; // ✨ Import UserRole
+import { useAuthStore } from "@/lib/hooks/useAuthStore";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BookA } from "lucide-react";
+import { BookA, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-// ✨ Import Select
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 
+// [UPDATE] Schema: Đổi username thành email, BỎ trường role
 const loginSchema = z.object({
-  username: z.string().min(3, "Tên đăng nhập phải có ít nhất 3 ký tự"),
+  email: z.string().email("Email không hợp lệ"), // Backend yêu cầu email
   password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
-  // ✨ Thêm trường chọn vai trò
-  role: z.enum(['student', 'lecturer', 'admin'], {
-    required_error: "Vui lòng chọn vai trò"
-  }),
 });
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuthStore();
   
+  // [UPDATE] State hiển thị xoay vòng khi đang gọi API
+  const [isLoading, setIsLoading] = useState(false);
+  
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { username: "", password: "", role: "student" }, // ✨ Thêm giá trị mặc định
+    defaultValues: { 
+        email: "", 
+        password: "" 
+        // [REMOVED] Bỏ default role
+    }, 
   });
 
-  const onSubmit = (data: z.infer<typeof loginSchema>) => {
-    console.log("Đăng nhập với:", data);
-    
-    // ✨ Giả lập đăng nhập thành công
-    const mockUser = {
-      id: "user123",
-      username: data.username,
-      avatar: "https://github.com/shadcn.png",
-      role: data.role as UserRole, // ✨ Gán vai trò từ form
-    };
-    login(mockUser);
-    toast.success(`Đăng nhập với vai trò ${data.role}, ${data.username}!`);
-    
-    // ✨ Điều hướng dựa trên vai trò
-    if (data.role === 'admin') {
-      router.push("/admin/users"); // Chuyển đến trang admin
-    } else {
-      router.push("/dashboard"); // Chuyển đến trang dashboard
+  // [UPDATE] Chuyển thành hàm async để chờ API
+  const onSubmit = async (data: z.infer<typeof loginSchema>) => {
+    setIsLoading(true); // Bắt đầu loading
+    try {
+        // Gọi hàm login từ store (hàm này giờ đã gọi API thật)
+        await login(data.email, data.password);
+        
+        // Login thành công -> Chuyển hướng
+        // (Lưu ý: Role được lưu trong store, bạn có thể check store.user.role để redirect nếu muốn)
+        router.push("/dashboard"); 
+        
+    } catch (error) {
+        // Lỗi đã được Toast bên trong useAuthStore hoặc ở đây
+        console.error("Login failed", error);
+    } finally {
+        setIsLoading(false); // Tắt loading dù thành công hay thất bại
     }
   };
 
@@ -67,12 +69,15 @@ export default function LoginPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="username"
+              name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tên đăng nhập</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="it-student" {...field} />
+                    <Input placeholder="name@example.com" 
+                        {...field} 
+                        disabled={isLoading} // [UPDATE] Khóa khi đang load 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -85,39 +90,28 @@ export default function LoginPage() {
                 <FormItem>
                   <FormLabel>Mật khẩu</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <Input type="password" {...field} 
+                        disabled={isLoading} // [UPDATE] Khóa khi đang load 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            {/* [REMOVED] Đã xóa phần <Select> chọn Role. 
+                Lý do: Server sẽ quyết định mik là ai dựa trên Email. 
+            */}
             
-            {/* ✨ Thêm ô chọn vai trò */}
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Đăng nhập với vai trò</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn vai trò để test..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="student">Sinh viên</SelectItem>
-                      <SelectItem value="lecturer">Giảng viên</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {/* [UPDATE] Hiển thị icon loading */}
+              {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Đang xử lý...
+                  </>
+              ) : (
+                  "Đăng nhập"
               )}
-            />
-            
-            <Button type="submit" className="w-full">
-              Đăng nhập
             </Button>
           </form>
         </Form>

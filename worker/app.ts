@@ -32,7 +32,7 @@ export const createApp = async () => {
   //Parsing request body
   app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
   app.use(session({
-    secret: process.env.SESSION_SECRET || "change-me",
+    secret: process.env.JWT_SECRET || "change-me",
     resave: false,
     saveUninitialized: false,
     cookie: { httpOnly: true, secure: process.env.NODE_ENV === "production" }

@@ -2,6 +2,7 @@
 import nodemailer from "nodemailer";
 import { Notification } from "../models/notification";
 import { User } from "../models/user";
+import { logDebug } from "../utils/logger";
 
 //Config
 const transporter = nodemailer.createTransport({
@@ -15,6 +16,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendEmailForNotification(notificationId: string){
+    logDebug("Start to Sending email for notification")
     const notif = await Notification.findById(notificationId);
     if (!notif) return;
 
@@ -45,7 +47,9 @@ export async function sendEmailForNotification(notificationId: string){
             { _id: notif._id},
             { $set: {deliveryStatus: "SENT", deliveryAt: new Date(), lastError: "" } }
         )
+        logDebug("Email sent successfully");
     } catch(e: any){
+        logDebug("Error sending email", e);
         await Notification.updateOne(
             { _id: notif._id},
             { $set: {deliveryStatus: "FAILED", lastError: String(e.message) || e } }

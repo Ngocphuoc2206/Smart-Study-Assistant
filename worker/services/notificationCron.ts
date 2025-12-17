@@ -2,6 +2,8 @@
 import { Reminder } from "../models/reminder";
 import { logDebug } from "../utils/logger";
 import { Notification } from "../models/notification";
+import { sendEmailForNotification } from "./emailDeliveryService";
+import { emitNotification } from "./realtimeNotificationService";
 
 export async function generateNotificationFromRemiders() {
     logDebug("Generate notification from reminders...");
@@ -27,11 +29,28 @@ export async function generateNotificationFromRemiders() {
         type: r.remindType,
         isRead: false
     }))
-
+    let insertedIds: string[] = [];
     try{
-        await Notification.insertMany(notifiDocs, {ordered: false});
+        const inserted = await Notification.insertMany(notifiDocs, {ordered: false});
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        insertedIds = inserted.map(i => i._id.toString());
     }catch(e: any) {
         if (e?.code !== 11000) throw e;
+    }
+
+    for (const id of insertedIds){
+        const n = await Notification.findById(id).select("channel").lean();
+        if (!n) continue;
+        
+        if (n.channel === "Email"){
+            await sendEmailForNotification(id);
+        }else{
+            await emitNotification(id);
+            await Reminder.updateOne(
+                { _id: id},
+                {$set: {isSent: true, deliveryAt: now, deliveryStatus: "SENT"}},
+            );
+        }
     }
 
     await Reminder.updateMany(

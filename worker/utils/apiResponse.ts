@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
@@ -12,6 +13,6 @@ export const created = (res: Response, data: any, message = "Success") => {
 };
 
 // BAD REQUEST
-export const error = (res: Response, data: any, message: String, details?: any) => {
+export const error = (res: Response, data: any, message: string, details?: any) => {
   return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message, data });
 };

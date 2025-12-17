@@ -30,8 +30,13 @@ export const createApp = async () => {
 
   const app = express();
   //Parsing request body
-  app.use(cors());
-  app.use(requestId);
+  app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+  app.use(session({
+    secret: process.env.SESSION_SECRET || "change-me",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true, secure: process.env.NODE_ENV === "production" }
+  }));
 
   app.use(express.json());
   app.use(bodyParser.urlencoded({ extended: true }));
@@ -45,14 +50,6 @@ export const createApp = async () => {
 
   //#region Register Middleware
   
-  app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
-  app.use(session({
-    secret: process.env.SESSION_SECRET || "change-me",
-    resave: false,
-    saveUninitialized: false,
-    cookie: { httpOnly: true, secure: process.env.NODE_ENV === "production" }
-  }));
-  app.use(requestId);
   app.use(authMiddleware);
   //#endregion
 

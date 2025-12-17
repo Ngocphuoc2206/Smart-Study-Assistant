@@ -11,17 +11,17 @@ type CourseInput = Omit<Course, 'id'>;
 
 // --- API CLIENT ---
 const createCourseAPI = async (data: CourseInput) => {
-  const res = await api.post('/courses', data);
+  const res = await api.post('/course', data);
   return res.data.data;
 };
 
 const updateCourseAPI = async ({ id, data }: { id: string, data: Partial<CourseInput> }) => {
-  const res = await api.put(`/courses/${id}`, data);
+  const res = await api.put(`/course/${id}`, data);
   return res.data.data;
 };
 
 const deleteCourseAPI = async (id: string) => {
-  const res = await api.delete(`/courses/${id}`);
+  const res = await api.delete(`/course/${id}`);
   return res.data;
 };
 
@@ -31,7 +31,7 @@ export const useCourseMutations = () => {
   
   // Hàm làm mới data sau khi sửa đổi
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['courses'] });
+    queryClient.invalidateQueries({ queryKey: ['course'] });
     // Refresh cả events vì event có chứa thông tin course (màu sắc, tên...)
     queryClient.invalidateQueries({ queryKey: ['events'] });
   };
@@ -42,7 +42,10 @@ export const useCourseMutations = () => {
       toast.success(`Đã tạo môn: ${data.name}`);
       invalidate();
     },
-    onError: (e: any) => toast.error(e.response?.data?.message || "Lỗi tạo môn học"),
+    onError: (e: any) => {
+        console.error(e);
+        toast.error(e.response?.data?.message || e.response?.data?.error || "Lỗi tạo môn học");
+    },
   });
 
   const updateMutation = useMutation({

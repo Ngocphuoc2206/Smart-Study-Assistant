@@ -267,4 +267,48 @@ export const deleteCourse = async (req: AuthRequest, res: Response) => {
     }
 };
 
+// GET /api/courses/:id/students
+export const getCourseStudents = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
 
+        // 1. Tìm khóa học theo ID
+        // .populate('students') là mấu chốt: Nó giúp biến mảng ID [ "user1", "user2" ]
+        // thành mảng Object chi tiết [ { _id: "user1", name: "An" }, ... ]
+        const course = await Course.findById(id).populate({
+            path: 'students',
+            select: 'firstName lastName email avatarUrl code' // 👈 Chỉ lấy các trường cần thiết, bỏ qua password
+        });
+
+        if (!course) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Không tìm thấy khóa học" 
+            });
+        }
+
+        // 2. (Tùy chọn) Kiểm tra quyền: Chỉ giáo viên của khóa học mới được xem danh sách
+        // Nếu bạn muốn Admin xem được thì thêm điều kiện OR
+        if (req.user && (req.user as any)?.role === 'teacher' && course.teacher.toString() !== req.user.userId) {
+             return res.status(403).json({ 
+                 success: false, 
+                 message: "Bạn không phải giáo viên của lớp này." 
+             });
+        }
+
+        // 3. Trả về danh sách sinh viên
+        return res.status(200).json({
+            success: true,
+            count: course.students.length, 
+            data: course.students         
+        });
+
+    } catch (error: any) {
+        console.error("Lỗi lấy danh sách sinh viên:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Lỗi server", 
+            error: error.message 
+        });
+    }
+};

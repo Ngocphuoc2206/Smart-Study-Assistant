@@ -1,31 +1,38 @@
 // app/page.tsx
 "use client";
 
-import { useAuthStore } from "@/lib/hooks/useAuthStore";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useAuthStore } from "@/lib/hooks/useAuthStore";
+import { Loader2 } from "lucide-react"; // Optional: Icon loading
 
 export default function RootPage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const isHydrated = useAuthStore.persist.hasHydrated();
+  
+  // 1. Tạo state để biết khi nào Client đã sẵn sàng (Mounted)
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (isHydrated) {
+    setIsMounted(true);
+  }, []);
+
+  // 2. Logic chuyển hướng
+  useEffect(() => {
+    // Chỉ chạy khi đã mounted (để đảm bảo đã đọc được localStorage)
+    if (isMounted) {
       if (user) {
-        router.replace("/dashboard");
+        router.push("/dashboard");
       } else {
-        router.replace("/login");
+        router.push("/login");
       }
     }
-  }, [isHydrated, user, router]);
+  }, [isMounted, user, router]);
 
-  // Hiển thị màn hình chờ trong khi check localStorage
+  // 3. Trong lúc chờ mount hoặc chờ redirect, hiển thị màn hình Loading trống
   return (
-     <div className="flex min-h-screen items-center justify-center">
-        <Skeleton className="h-20 w-20 rounded-full" />
-        <p className="ml-4 text-lg font-medium">Đang tải...</p>
-      </div>
+    <div className="flex h-screen w-full items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
   );
 }

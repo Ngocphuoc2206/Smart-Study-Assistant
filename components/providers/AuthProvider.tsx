@@ -11,7 +11,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
   
   // Lấy trạng thái từ 'persist' (localStorage)
-  const isHydrated = useAuthStore.persist.hasHydrated();
+  // `useAuthStore.persist` may be undefined in some environments (SSR/dev),
+  // so guard the call and fall back to `true` to avoid blocking render.
+  const isHydrated =
+    typeof useAuthStore?.persist?.hasHydrated === "function"
+      ? useAuthStore.persist.hasHydrated()
+      : true;
 
   useEffect(() => {
     // Chỉ chạy sau khi đã lấy dữ liệu từ localStorage

@@ -1,123 +1,112 @@
+// lib/hooks/useEventMutations.ts
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { StudyEvent } from "@/lib/types";
-import { NLPEntity } from "@/features/chat/mockNLP";
+import api from "@/lib/api";
 import { toast } from "sonner";
-import { v4 as uuidv4 } from 'uuid';
-// ✨ Import từ file mock data
-import { mockEventsStore, mockCoursesStore } from '@/lib/mockData'; 
+import { format } from "date-fns";
 
-// --- HÀM TẠO ---
-const mockCreateEvent = async (eventData: NLPEntity, reminders?: number[]): Promise<StudyEvent> => {
-  await new Promise(res => setTimeout(res, 500));
-  
-  if (!eventData.title || !eventData.date || !eventData.timeStart) {
-      throw new Error("Thiếu thông tin bắt buộc (title, date, timeStart).");
-  }
-  
-  const newEvent: StudyEvent = {
-    id: uuidv4(),
-    type: eventData.type || 'other',
+// Hàm helper: Gộp ngày + giờ -> ISO String để gửi lên Backend
+// Vì Backend cần 'startTime' (Date) chứ không phải 'date' + 'timeStart' rời rạc
+const combineDateTime = (dateStr: string | Date | undefined, timeStr: string | undefined) => {
+    if (!dateStr || !timeStr) return undefined;
+    
+    const d = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    
+    // Tạo bản sao date để không mutate object gốc
+    const newDate = new Date(d);
+    newDate.setHours(hours, minutes, 0, 0);
+    return newDate.toISOString();
+}
+
+// --- 1. TẠO MỚI (Create) ---
+const createEventAPI = async ({ eventData }: any) => {
+  const payload = {
     title: eventData.title,
-    date: eventData.date,
-    timeStart: eventData.timeStart,
-    timeEnd: eventData.timeEnd,
+    type: eventData.type,
     location: eventData.location,
-    // Liên kết course nếu có
-    course: eventData.courseId ? mockCoursesStore[eventData.courseId] : undefined, // ✨ Dùng store
-    reminders: reminders?.map(offset => ({ offsetSec: offset, channel: 'inapp' }))
+    courseId: eventData.courseId,
+    // Chuyển đổi format FE -> BE
+    startTime: combineDateTime(eventData.date, eventData.timeStart),
+    endTime: eventData.timeEnd ? combineDateTime(eventData.date, eventData.timeEnd) : undefined,
   };
-  
-  // Thêm vào "database"
-  mockEventsStore.push(newEvent); // ✨ Dùng store
-  return newEvent;
+
+  const res = await api.post('/schedule', payload);
+  return res.data.data;
 };
 
 export const useCreateEventMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ eventData, reminders }: { eventData: NLPEntity, reminders?: number[] }) => 
-      mockCreateEvent(eventData, reminders),
-    
-    onSuccess: (newEvent) => {
-      toast.success(`Đã tạo sự kiện: ${newEvent.title}`);
-      // Invalidate tất cả query 'events'
+    mutationFn: createEventAPI,
+    onSuccess: () => {
+      toast.success("Đã tạo sự kiện thành công!");
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      // Cũng invalidate 'courses' vì số lượng event thay đổi
-      queryClient.invalidateQueries({ queryKey: ['coursesWithCount'] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
-    onError: (error) => {
-      toast.error(`Lỗi: ${error.message}`);
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Lỗi khi tạo sự kiện");
     }
   });
 };
 
-
-// --- HÀM SỬA ---
+// --- 2. CẬP NHẬT (Update) - Phần còn thiếu ---
 type UpdateEventData = {
     id: string;
-    // Dùng Partial vì form có thể không gửi đủ 100%
-    data: Partial<Omit<StudyEvent, 'id' | 'course' | 'reminders'> & { courseId?: string }>;
-    reminders?: number[];
+    data: any; // Dữ liệu từ form
+    reminders?: any[]; // (Backend chưa xử lý cái này, nhưng giữ tham số để không lỗi form)
 }
 
-const mockUpdateEvent = async ({ id, data, reminders }: UpdateEventData): Promise<StudyEvent> => {
-    await new Promise(res => setTimeout(res, 400));
-    const eventIndex = mockEventsStore.findIndex(e => e.id === id); // ✨ Dùng store
-    if (eventIndex === -1) throw new Error("Không tìm thấy sự kiện");
-    
-    const updatedEvent = { 
-        ...mockEventsStore[eventIndex], // ✨ Dùng store
-        ...data,
-        // Cập nhật course
-        course: data.courseId ? mockCoursesStore[data.courseId] : undefined, // ✨ Dùng store
-        // Cập nhật reminders
-        reminders: reminders ? reminders.map(offset => ({ offsetSec: offset, channel: 'inapp' })) : mockEventsStore[eventIndex].reminders
+const updateEventAPI = async ({ id, data }: UpdateEventData) => {
+    // Chuẩn bị payload, chỉ gửi những gì thay đổi hoặc gửi đè
+    const payload = {
+        title: data.title,
+        type: data.type,
+        location: data.location,
+        courseId: data.courseId,
+        // Nếu có date/time mới thì tính lại startTime/endTime
+        ...(data.date && data.timeStart && { 
+            startTime: combineDateTime(data.date, data.timeStart) 
+        }),
+        ...(data.date && data.timeEnd && { 
+            endTime: combineDateTime(data.date, data.timeEnd) 
+        }),
     };
 
-    mockEventsStore[eventIndex] = updatedEvent; // ✨ Dùng store
-    return updatedEvent;
+    const res = await api.put(`/schedule/${id}`, payload);
+    return res.data.data;
 };
 
 export const useUpdateEventMutation = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (updateData: UpdateEventData) => mockUpdateEvent(updateData),
-        onSuccess: (updatedEvent) => {
-            toast.success(`Đã cập nhật: ${updatedEvent.title}`);
+        mutationFn: updateEventAPI,
+        onSuccess: () => {
+            toast.success("Đã cập nhật sự kiện");
             queryClient.invalidateQueries({ queryKey: ['events'] });
-            queryClient.invalidateQueries({ queryKey: ['coursesWithCount'] });
+            queryClient.invalidateQueries({ queryKey: ['courses'] });
         },
-        onError: (error) => {
-            toast.error(`Lỗi cập nhật: ${error.message}`);
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Lỗi cập nhật");
         }
     });
 };
 
-
-// --- HÀM XÓA ---
-const mockDeleteEvent = async (eventId: string): Promise<string> => {
-  await new Promise(res => setTimeout(res, 400));
-  const eventIndex = mockEventsStore.findIndex(e => e.id === eventId); // ✨ Dùng store
-  if (eventIndex > -1) {
-    mockEventsStore.splice(eventIndex, 1); // ✨ Dùng store
-    return eventId;
-  }
-  throw new Error("Không tìm thấy sự kiện để xóa");
-};
-
+// --- 3. XÓA (Delete) ---
 export const useDeleteEventMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (eventId: string) => mockDeleteEvent(eventId),
-    onSuccess: () => {
-      toast.success("Đã xóa sự kiện");
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['coursesWithCount'] });
-    },
-    onError: (error) => {
-      toast.error(`Lỗi: ${error.message}`);
-    }
-  });
+    const queryClient = useQueryClient();
+    return useMutation({
+      mutationFn: async (id: string) => {
+        await api.delete(`/schedule/${id}`);
+      },
+      onSuccess: () => {
+        toast.success("Đã xóa sự kiện");
+        queryClient.invalidateQueries({ queryKey: ['events'] });
+        queryClient.invalidateQueries({ queryKey: ['courses'] });
+      },
+      onError: (err: any) => {
+        toast.error(err.response?.data?.message || "Lỗi xóa sự kiện");
+      }
+    });
 };

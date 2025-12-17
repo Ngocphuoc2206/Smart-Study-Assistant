@@ -1,6 +1,7 @@
 /* eslint-disable no-var */
 import express from "express";
 import cors from "cors";
+import session from "express-session";
 import { connectDB } from "./config/db";
 import fs from "fs";
 import morgan from "morgan";
@@ -44,6 +45,14 @@ export const createApp = async () => {
 
   //#region Register Middleware
   
+  app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+  app.use(session({
+    secret: process.env.SESSION_SECRET || "change-me",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true, secure: process.env.NODE_ENV === "production" }
+  }));
+  app.use(requestId);
   app.use(authMiddleware);
   //#endregion
 

@@ -3,76 +3,64 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Course } from "@/lib/types";
-import { mockCoursesStore } from "@/lib/mockData";
+import api from "@/lib/api"; // Dùng api client đã cấu hình
 import { toast } from "sonner";
-import { v4 as uuidv4 } from 'uuid';
 
+// Type cho dữ liệu gửi lên (bỏ id vì BE tự tạo)
 type CourseInput = Omit<Course, 'id'>;
 
-// --- TẠO ---
-const createCourse = async (data: CourseInput): Promise<Course> => {
-  await new Promise(res => setTimeout(res, 400));
-  const newId = `c${Object.keys(mockCoursesStore).length + 1}`;
-  const newCourse: Course = { id: newId, ...data };
-  mockCoursesStore[newId] = newCourse;
-  return newCourse;
+// --- API CLIENT ---
+const createCourseAPI = async (data: CourseInput) => {
+  const res = await api.post('/courses', data);
+  return res.data.data;
 };
 
-// --- SỬA ---
-const updateCourse = async ({ id, data }: { id: string, data: Partial<CourseInput> }): Promise<Course> => {
-  await new Promise(res => setTimeout(res, 400));
-  if (!mockCoursesStore[id]) throw new Error("Không tìm thấy môn học");
-  mockCoursesStore[id] = { ...mockCoursesStore[id], ...data };
-  return mockCoursesStore[id];
+const updateCourseAPI = async ({ id, data }: { id: string, data: Partial<CourseInput> }) => {
+  const res = await api.put(`/courses/${id}`, data);
+  return res.data.data;
 };
 
-// --- XÓA ---
-const deleteCourse = async (id: string): Promise<string> => {
-  await new Promise(res => setTimeout(res, 400));
-  // (Logic thực tế sẽ kiểm tra xem môn học có sự kiện nào không)
-  // if (mockEventsStore.some(e => e.course?.id === id)) {
-  //   throw new Error("Không thể xóa môn học đang có sự kiện");
-  // }
-  if (!mockCoursesStore[id]) throw new Error("Không tìm thấy môn học");
-  delete mockCoursesStore[id];
-  return id;
+const deleteCourseAPI = async (id: string) => {
+  const res = await api.delete(`/courses/${id}`);
+  return res.data;
 };
 
-// --- Hook tổng ---
+// --- HOOK ---
 export const useCourseMutations = () => {
   const queryClient = useQueryClient();
   
+  // Hàm làm mới data sau khi sửa đổi
   const invalidate = () => {
-    // Làm mới cả 2 query
-    queryClient.invalidateQueries({ queryKey: ['coursesWithCount'] });
+    queryClient.invalidateQueries({ queryKey: ['courses'] });
+    // Refresh cả events vì event có chứa thông tin course (màu sắc, tên...)
     queryClient.invalidateQueries({ queryKey: ['events'] });
   };
 
   const createMutation = useMutation({
-    mutationFn: createCourse,
+    mutationFn: createCourseAPI,
     onSuccess: (data) => {
       toast.success(`Đã tạo môn: ${data.name}`);
       invalidate();
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.response?.data?.message || "Lỗi tạo môn học"),
   });
 
   const updateMutation = useMutation({
-    mutationFn: updateCourse,
+    mutationFn: updateCourseAPI,
     onSuccess: (data) => {
       toast.success(`Đã cập nhật: ${data.name}`);
       invalidate();
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.response?.data?.message || "Lỗi cập nhật môn học"),
   });
   
   const deleteMutation = useMutation({
-    mutationFn: deleteCourse,
+    mutationFn: deleteCourseAPI,
     onSuccess: () => {
       toast.success("Đã xóa môn học");
       invalidate();
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.response?.data?.message || "Lỗi xóa môn học"),
   });
   
   return { createMutation, updateMutation, deleteMutation };

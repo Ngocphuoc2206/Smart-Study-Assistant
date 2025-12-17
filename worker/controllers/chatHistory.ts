@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { ChatMessage } from "../models/chatMessage";

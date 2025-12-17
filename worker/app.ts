@@ -30,6 +30,9 @@ export const createApp = async () => {
 
   const app = express();
   //Parsing request body
+  app.use(cors());
+  app.use(requestId);
+
   app.use(express.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -41,6 +44,7 @@ export const createApp = async () => {
   app.use(morgan("combined", { stream: accessLogStream }))
 
   //#region Register Middleware
+  
   app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
   app.use(session({
     secret: process.env.SESSION_SECRET || "change-me",
@@ -50,7 +54,6 @@ export const createApp = async () => {
   }));
   app.use(requestId);
   app.use(authMiddleware);
-  app.use(errorHandler);
   //#endregion
 
   //Route
@@ -61,7 +64,7 @@ export const createApp = async () => {
   app.use("/api/course", courseRouter);
   app.use("/api/chat-history", chatHistoryRouter);
   app.use("/api/teacher", teacherRouter);
-  app.use("/api/reminder", remindRouter);
+  app.use("/api/remind", remindRouter);
   app.use("/api/chat", chatRouter);
   app.get("/api/version", (req, res) => {
     res.json({
@@ -69,6 +72,7 @@ export const createApp = async () => {
       env: process.env.NODE_ENV,
     });
   });
+  app.use(errorHandler);
 
   return app;
 };

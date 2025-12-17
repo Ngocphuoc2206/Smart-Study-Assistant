@@ -1,10 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { success } from "zod";
 import { VNEntities } from "../../shared/type";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Schedule } from "../models/schedule";
+import * as ReminderService from "../services/reminderService";
+
 
 export class ScheduleService {
     static async createFromNLP(entities: VNEntities){
+        if (!entities.userId) {
+            return { success: false, message: "Missing userId in NLP entities" };
+        }
         try{
             const schedule = await Schedule.create({
                 title: entities.title,
@@ -17,6 +23,17 @@ export class ScheduleService {
                 reminders: entities.reminder,
                 user: entities.userId
             })
+            //Create reminder docs
+            if (schedule){
+                const reminderDocs = ReminderService.buildForSchedule({
+                    userId: entities.userId.toString(),
+                    scheduleId: schedule._id.toString(),
+                    title: schedule.title,
+                    startTime: schedule.startTime,
+                    reminders: entities.reminder,
+                });
+                await ReminderService.createMany(reminderDocs as any[]);
+            }
             return {
                 success: true,
                 created: schedule,

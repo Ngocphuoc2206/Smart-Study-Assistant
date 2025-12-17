@@ -36,6 +36,7 @@ export type VNEntities = {
     reminder?: number[];
     reminderOffset?: number;
     missingEntities?: string[];
+    remindChannel?: ReminderChannel;
 }
 
 export type DetectedIntent = {
@@ -87,4 +88,9 @@ export function mapIntentName(raw: string): VNIntentName {
 export type ReminderChannel = "Email" | "In-app" | "email" | "inapp";
 export type ReminderInput = number | {offsetSec: number; channel?: ReminderChannel}
 export type NormalizedReminder = { offsetSec: number; channel: "Email" | "In-app" };
+//#endregion
+
+//#region Notification
+export type NotificationChannel = "Email" | "In-app";
+export type NotificationType = "TASK" | "SCHEDULE";
 //#endregion

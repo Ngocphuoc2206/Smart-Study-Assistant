@@ -6,7 +6,7 @@ import { validateTeacher } from "../middlewares/roleMiddleware";
 const courseRouter = Router();
 
 courseRouter.post("/",validateTeacher, createCourse);
-courseRouter.get("/", validateTeacher, getCourses);
+courseRouter.get("/", getCourses);
 courseRouter.put("/:id", validateTeacher, updateCourse);
 courseRouter.delete("/:id", validateTeacher, deleteCourse);
 courseRouter.get("/:id/students", getCourseStudents);

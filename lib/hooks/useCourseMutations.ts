@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Course } from "@/lib/types";
 import api from "@/lib/api"; 
 import { toast } from "sonner";
+import axios from "axios";
 
 // Type for data input (without 'id')
 type CourseInput = Omit<Course, 'id'>;
@@ -66,5 +67,19 @@ export const useCourseMutations = () => {
     onError: (e: any) => toast.error(e.response?.data?.message || "Lỗi xóa môn học"),
   });
   
-  return { createMutation, updateMutation, deleteMutation };
+ const registerMutation = useMutation({
+       mutationFn: async (courseId: string) => {
+           // Gọi API: POST /api/courses/{courseId}/register
+           return axios.post(`/api/courses/${courseId}/register`);
+       },
+       onSuccess: () => {
+           queryClient.invalidateQueries({ queryKey: ['courses'] });
+           toast.success("Đăng ký thành công!");
+       },
+       onError: (error) => {
+           toast.error("Đăng ký thất bại");
+       }
+   });
+
+   return { createMutation, updateMutation, deleteMutation, registerMutation };
 };

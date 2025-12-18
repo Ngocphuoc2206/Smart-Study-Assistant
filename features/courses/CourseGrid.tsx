@@ -3,6 +3,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useCourses, CourseWithEventCount } from "@/lib/hooks/useCourses";
+import { useAuthStore } from "@/lib/hooks/useAuthStore";
 import { useCourseMutations } from "@/lib/hooks/useCourseMutations";
 import { Course } from "@/lib/types";
 import CourseForm, { CourseFormValues } from "./CourseForm";
@@ -22,10 +23,15 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { AlertCircle, CalendarDays, Edit, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import { AlertCircle, CalendarDays, Edit, Loader2, Plus, Search, Trash2, UserPlus } from "lucide-react";
 import { useDebounce } from "use-debounce";
 
 export default function CourseGrid() {
+
+  // --- Auth & Role ---
+  const user = useAuthStore((state) => state.user);
+  const isTeacher = user?.role === "teacher"; // Xác định quyền
+
   // --- State & Data Fetching ---
   const { data: courses, isLoading, isError } = useCourses();
   const { createMutation, updateMutation, deleteMutation } = useCourseMutations();
@@ -82,6 +88,11 @@ export default function CourseGrid() {
     });
   };
 
+  const handleRegister = (courseId: string) => {
+    // Placeholder register handler — replace with real mutation if available
+    console.log("Yêu cầu đăng ký môn học, ID:", courseId);
+  };
+
   // --- Render ---
   const renderContent = () => {
     if (isLoading) {
@@ -112,6 +123,8 @@ export default function CourseGrid() {
             course={course}
             onEdit={() => setEditCourse(course)}
             onDelete={() => setDeleteCourse(course)}
+            onRegister={() => handleRegister(course.id)}
+            isTeacher={isTeacher}
           />
         ))}
       </div>
@@ -143,104 +156,157 @@ export default function CourseGrid() {
           </Select>
         </div>
         
-        {/* Dialog Thêm Môn học (Yêu cầu 2) */}
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Thêm môn học
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Thêm môn học mới</DialogTitle>
-            </DialogHeader>
-            <CourseForm 
-              onSubmit={handleAddSubmit} 
-              isLoading={createMutation.isPending} 
-            />
-          </DialogContent>
-        </Dialog>
+        {/* CHỈ TEACHER MỚI ĐƯỢC THẤY NÚT THÊM */}
+        {isTeacher && (
+            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Thêm môn học
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                <DialogTitle>Thêm môn học mới</DialogTitle>
+                </DialogHeader>
+                <CourseForm 
+                onSubmit={handleAddSubmit} 
+                isLoading={createMutation.isPending} 
+                />
+            </DialogContent>
+            </Dialog>
+        )}
       </div>
 
       {/* Grid */}
       {renderContent()}
 
-      {/* Dialog Sửa Môn học */}
-      <Dialog open={!!editCourse} onOpenChange={(open) => !open && setEditCourse(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Sửa môn học</DialogTitle>
-          </DialogHeader>
-          <CourseForm 
-            defaultValues={editCourse!}
-            onSubmit={handleEditSubmit} 
-            isLoading={updateMutation.isPending} 
-          />
-        </DialogContent>
-      </Dialog>
-      
-      {/* Dialog Xác nhận Xóa */}
-      <AlertDialog open={!!deleteCourse} onOpenChange={(open) => !open && setDeleteCourse(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Xóa môn "{deleteCourse?.name}"? Hành động này không thể hoàn tác.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete} 
-              disabled={deleteMutation.isPending}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {deleteMutation.isPending ? "Đang xóa..." : "Xóa"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Các Dialog Edit/Delete chỉ render nếu là Teacher (để an toàn) */}
+      {isTeacher && (
+          <>
+            <Dialog open={!!editCourse} onOpenChange={(open) => !open && setEditCourse(null)}>
+                <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Sửa môn học</DialogTitle>
+                </DialogHeader>
+                <CourseForm 
+                    defaultValues={editCourse!}
+                    onSubmit={handleEditSubmit} 
+                    isLoading={updateMutation.isPending} 
+                />
+                </DialogContent>
+            </Dialog>
+            
+            <AlertDialog open={!!deleteCourse} onOpenChange={(open) => !open && setDeleteCourse(null)}>
+                <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                  Xóa môn "{deleteCourse?.name}"? Hành động này không thể hoàn tác.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Hủy</AlertDialogCancel>
+                    <AlertDialogAction 
+                    onClick={confirmDelete} 
+                    disabled={deleteMutation.isPending}
+                    className="bg-destructive hover:bg-destructive/90"
+                    >
+                    {deleteMutation.isPending ? "Đang xóa..." : "Xóa"}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+          </>
+      )}
     </div>
   );
 }
 
 // --- Component Card Phụ ---
-function CourseCard({ course, onEdit, onDelete }: { 
+function CourseCard({ 
+  course, 
+  onEdit, 
+  onDelete,
+  onRegister,
+  isTeacher
+}: {
   course: CourseWithEventCount,
   onEdit: () => void,
   onDelete: () => void,
+  onRegister?: () => void,
+  isTeacher?: boolean
 }) {
+ // Render chung cho phần nội dung Card
+  const CardContentInner = () => (
+    <>
+        <CardHeader className="flex-row items-center gap-4 space-y-0">
+          <span className="h-10 w-10 rounded-lg flex-shrink-0" style={{ backgroundColor: course.color }} />
+          <div>
+            <CardTitle className="line-clamp-1" title={course.name}>{course.name}</CardTitle>
+            <CardDescription>{course.code}</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="flex-grow">
+             {/* Có thể hiển thị thêm tên Giảng viên ở đây nếu API trả về */}
+             {/* <p className="text-sm text-muted-foreground">GV: {course.teacherName}</p> */}
+        </CardContent>
+    </>
+  );
+
+  // --- LOGIC CHO GIẢNG VIÊN (Có Context Menu để sửa xóa) ---
+  if (isTeacher) {
+      return (
+        <ContextMenu>
+          <ContextMenuTrigger>
+            <Card className="h-full flex flex-col hover:shadow-md transition-shadow cursor-pointer">
+              <CardContentInner />
+              <CardFooter>
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <CalendarDays className="h-4 w-4 mr-1.5" />
+                  <span>{course.eventCount} sự kiện</span>
+                </div>
+              </CardFooter>
+            </Card>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem onClick={onEdit}>
+              <Edit className="h-4 w-4 mr-2" />
+              Sửa
+            </ContextMenuItem>
+            <ContextMenuItem onClick={onDelete} className="text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Xóa
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      );
+  }
+
+  // --- LOGIC CHO SINH VIÊN (Nút Đăng Ký) ---
+  // Kiểm tra xem sinh viên đã đăng ký chưa (nếu API trả về field isRegistered)
+  // Tạm thời mình luôn hiện nút Đăng ký
   return (
-    <ContextMenu>
-      <ContextMenuTrigger>
-        <Card className="h-full flex flex-col">
-          <CardHeader className="flex-row items-center gap-4 space-y-0">
-            <span className="h-10 w-10 rounded-lg flex-shrink-0" style={{ backgroundColor: course.color }} />
-            <div>
-              <CardTitle>{course.name}</CardTitle>
-              <CardDescription>{course.code}</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="flex-grow"></CardContent>
-          <CardFooter>
+    <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
+        <CardContentInner />
+        <CardFooter className="flex justify-between items-center mt-auto">
             <div className="flex items-center text-sm text-muted-foreground">
-              <CalendarDays className="h-4 w-4 mr-1.5" />
-              <span>{course.eventCount} sự kiện</span>
+                <CalendarDays className="h-4 w-4 mr-1.5" />
+                <span>{course.eventCount} Sự kiện</span>
             </div>
-          </CardFooter>
-        </Card>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onClick={onEdit}>
-          <Edit className="h-4 w-4 mr-2" />
-          Sửa
-        </ContextMenuItem>
-        <ContextMenuItem onClick={onDelete} className="text-destructive">
-          <Trash2 className="h-4 w-4 mr-2" />
-          Xóa
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+            
+            <Button size="sm" onClick={() => onRegister?.()} variant="secondary" className="gap-2">
+                <UserPlus className="h-4 w-4" />
+                Đăng ký
+            </Button>
+            
+            {/* Nếu muốn hiển thị trạng thái đã đăng ký:
+            <Button size="sm" variant="ghost" className="gap-2 text-green-600 cursor-default hover:text-green-600 hover:bg-transparent">
+                <CheckCircle2 className="h-4 w-4" />
+                Đã tham gia
+            </Button> 
+            */}
+        </CardFooter>
+    </Card>
   );
 }

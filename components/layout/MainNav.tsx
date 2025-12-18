@@ -16,7 +16,7 @@ const routes = [
   { href: "/notifications", label: "Thông báo", roles: ["student", "teacher"] },
   
   // == Lecturer Only ==
-  { href: "/courses", label: "Môn học", roles: ["teacher"] }, 
+  { href: "/courses", label: "Môn học", roles: ["teacher", "student"] }, 
   { href: "/events/new", label: "Thêm sự kiện", roles: ["teacher"] },
   // ✨ SỬA Ở ĐÂY: Thay "Tạo khóa học" bằng "Danh sách sinh viên"
   { href: "/students", label: "Danh sách sinh viên", roles: ["teacher"] }, 

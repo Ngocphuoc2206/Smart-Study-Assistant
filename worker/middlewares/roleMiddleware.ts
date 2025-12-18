@@ -1,7 +1,7 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "./authMiddleware";
 import { User } from "../models/user";
-import { logDebug, logError } from "../utils/logger";
+import { logDebug, logError } from "../../shared/logger";
 
 export const validateTeacher = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

@@ -2,7 +2,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { ChatMessage } from "../models/chatMessage";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 import { Chat } from "openai/resources/index.mjs";
 
 // GET /chat/history

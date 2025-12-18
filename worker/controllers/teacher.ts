@@ -3,7 +3,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Course } from "../models/course";
-import { logDebug, logError } from "../utils/logger";
+import { logDebug, logError } from "../../shared/logger";
 // Chúng ta sẽ tự trả response thủ công để kiểm soát mã 200, 401, 500 theo ý bạn
 // import { ok, error } from "../utils/apiResponse"; 
 

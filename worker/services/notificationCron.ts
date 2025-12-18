@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Reminder } from "../models/reminder";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 import { Notification } from "../models/notification";
 import { sendEmailForNotification } from "./emailDeliveryService";
 import { emitNotification } from "./realtimeNotificationService";

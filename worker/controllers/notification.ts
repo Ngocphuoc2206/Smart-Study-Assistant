@@ -2,7 +2,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Notification } from "../models/notification";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 import { Reminder } from "../models/reminder";
 
 const normalizeStatus = (s: string) => {

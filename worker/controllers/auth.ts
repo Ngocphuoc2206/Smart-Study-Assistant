@@ -2,10 +2,20 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { User } from "../models/user";
-import { signAccessToken } from "../utils/jwt";
-import { logDebug } from "../utils/logger";
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt";
+import { logDebug } from "../../shared/logger";
 import { AuthRequest } from "../middlewares/authMiddleware";
+import path from "path";
 const SALT_ROUNDS = 10;
+const REFRESH_COOKIE_NAME = "refreshToken";
+const refreshCookieOptions = {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: true,
+    path: "/",
+    maxAge: 14 * 24 * 60 * 60 * 1000 //14 days
+
+}
 
 //POST /auth/register
 export const register = async(req: Request, res: Response) => {
@@ -42,6 +52,9 @@ export const register = async(req: Request, res: Response) => {
 
         // Assign token
         const accessToken = signAccessToken({ userId: newUser._id.toString(), role: newUser.role });
+        const refreshToken = signRefreshToken({ userId: newUser._id.toString(), role: newUser.role });
+        res.cookie(REFRESH_COOKIE_NAME, refreshToken, refreshCookieOptions);
+
         logDebug("New user registered with data: ", newUser)
         return res.status(201).json({
             success: true,
@@ -94,12 +107,8 @@ export const login = async(req: Request, res: Response) => {
         }
         //Assign token
         const accessToken = signAccessToken({userId: existingUser._id.toString(), role: existingUser.role});
-        // Set session user for cookie-based sessions
-        try {
-            (req as any).session.user = { userId: existingUser._id.toString() };
-        } catch (e) {
-            // ignore if session not configured
-        }
+        const refreshToken = signRefreshToken({userId: existingUser._id.toString(), role: existingUser.role});
+        res.cookie(REFRESH_COOKIE_NAME, refreshToken, refreshCookieOptions);
         logDebug("User logged in with data: ", existingUser);
         return res.status(200).json({
             success: true,
@@ -208,3 +217,40 @@ export const updateMe = async (req: AuthRequest, res: Response) => {
         });
     }
 }
+
+//POST /auth/refresh
+export const refresh = async(req: Request, res: Response) => {
+    try{
+        const token = req.cookies?.[REFRESH_COOKIE_NAME];
+        if (!token){
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+        const payload = verifyRefreshToken(token); //userId, role
+        const user = await User.findById(payload.userId);
+        if (!user){
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+        const accessToken = signAccessToken({userId: user._id.toString(), role: user.role});
+        return res.status(200).json({
+            success: true,
+            data: {
+                accessToken
+            }
+        });
+    }
+    catch(error){
+        logDebug("Error refreshing token: ", error);
+    }
+}
+
+//POST /auth/logout
+export const logout = async (req: Request, res: Response) => {
+  res.clearCookie(REFRESH_COOKIE_NAME, { path: "/" });
+  return res.status(200).json({ success: true });
+};

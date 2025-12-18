@@ -26,7 +26,7 @@ const fetchCourses = async (): Promise<CourseWithEventCount[]> => {
 
 export const useCourses = () => {
   return useQuery({
-    queryKey: ['course'], 
+    queryKey: ['courses'], 
     queryFn: fetchCourses,
     staleTime: 1000 * 60 * 5, 
   });

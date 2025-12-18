@@ -200,10 +200,10 @@ export default function CourseGrid() {
             <AlertDialog open={!!deleteCourse} onOpenChange={(open) => !open && setDeleteCourse(null)}>
                 <AlertDialogContent>
                 <AlertDialogHeader>
-                    <DialogTitle>Bạn có chắc chắn muốn xóa?</DialogTitle>
-                    <AlertDialogDescription>
-                    Xóa môn "{deleteCourse?.name}"? Hành động này không thể hoàn tác.
-                    </AlertDialogDescription>
+                  <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                  Xóa môn "{deleteCourse?.name}"? Hành động này không thể hoàn tác.
+                  </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Hủy</AlertDialogCancel>
@@ -292,7 +292,7 @@ function CourseCard({
         <CardFooter className="flex justify-between items-center mt-auto">
             <div className="flex items-center text-sm text-muted-foreground">
                 <CalendarDays className="h-4 w-4 mr-1.5" />
-                <span>{course.eventCount} sk</span>
+                <span>{course.eventCount} Sự kiện</span>
             </div>
             
             <Button size="sm" onClick={() => onRegister?.()} variant="secondary" className="gap-2">

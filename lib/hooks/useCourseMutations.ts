@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Course } from "@/lib/types";
 import api from "@/lib/api"; 
 import { toast } from "sonner";
+import axios from "axios";
 
 // Type for data input (without 'id')
 type CourseInput = Omit<Course, 'id'>;

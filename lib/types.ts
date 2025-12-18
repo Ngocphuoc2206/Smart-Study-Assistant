@@ -5,6 +5,7 @@ export type Course = {
   id: string;
   name: string;
   code?: string;
+  description?: string;
   color: string; // Mã màu hex, ví dụ: '#ef4444'
 };
 
@@ -18,5 +19,6 @@ export type StudyEvent = {
   timeEnd?: string; // "HH:mm"
   course?: Course; // Liên kết với môn học (có màu)
   location?: string;
+  notes?: string;
   reminders?: { offsetSec: number; channel: 'inapp' | 'email' | 'webpush' }[];
 };

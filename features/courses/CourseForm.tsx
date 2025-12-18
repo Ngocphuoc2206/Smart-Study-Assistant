@@ -42,6 +42,7 @@ export default function CourseForm({ defaultValues, onSubmit, isLoading }: Cours
     defaultValues: {
       name: defaultValues?.name || "",
       code: defaultValues?.code || "",
+      description: defaultValues?.description || "",
       color: defaultValues?.color || "#ef4444",
     },
   });
@@ -51,6 +52,7 @@ export default function CourseForm({ defaultValues, onSubmit, isLoading }: Cours
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/*-- Name course --*/}
         <FormField
           control={form.control}
           name="name"
@@ -64,6 +66,7 @@ export default function CourseForm({ defaultValues, onSubmit, isLoading }: Cours
             </FormItem>
           )}
         />
+        {/*-- Code --*/}
         <FormField
           control={form.control}
           name="code"
@@ -72,6 +75,24 @@ export default function CourseForm({ defaultValues, onSubmit, isLoading }: Cours
               <FormLabel>Mã môn học (Tùy chọn)</FormLabel>
               <FormControl>
                 <Input placeholder="Ví dụ: IT4040" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {/*-- Description --*/}
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Mô tả môn học *</FormLabel>
+              <FormControl>
+                <textarea 
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="Nhập mô tả về môn học..."
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -267,4 +267,46 @@ export const deleteCourse = async (req: AuthRequest, res: Response) => {
     }
 };
 
+// GET /api/courses/:id/students
+export const getCourseStudents = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
 
+        // 1. Find course by ID
+        const course = await Course.findById(id).populate({
+            path: 'students',
+            select: 'firstName lastName email avatarUrl code' 
+        });
+
+        if (!course) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Không tìm thấy khóa học" 
+            });
+        }
+
+        // 2. Check permission: only teacher of the course can view student list
+        
+        if (req.user && (req.user as any)?.role === 'teacher' && course.teacher.toString() !== req.user.userId) {
+             return res.status(403).json({ 
+                 success: false, 
+                 message: "Bạn không phải giáo viên của lớp này." 
+             });
+        }
+
+        // 3. Return student list
+        return res.status(200).json({
+            success: true,
+            count: course.students.length, 
+            data: course.students         
+        });
+
+    } catch (error: any) {
+        console.error("Lỗi lấy danh sách sinh viên:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Lỗi server", 
+            error: error.message 
+        });
+    }
+};

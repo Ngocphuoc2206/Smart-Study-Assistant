@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { no } from "zod/v4/locales";
 
 // Hàm helper: Gộp ngày + giờ -> ISO String để gửi lên Backend
 // Vì Backend cần 'startTime' (Date) chứ không phải 'date' + 'timeStart' rời rạc
@@ -20,16 +21,18 @@ const combineDateTime = (dateStr: string | Date | undefined, timeStr: string | u
     return newDate.toISOString();
 }
 
-// --- 1. TẠO MỚI (Create) ---
-const createEventAPI = async ({ eventData }: any) => {
+// --- 1.(Create) ---
+const createEventAPI = async ({ eventData, reminders }: any) => {
   const payload = {
     title: eventData.title,
     type: eventData.type,
     location: eventData.location,
-    courseId: eventData.courseId,
-    // Chuyển đổi format FE -> BE
+    notes: eventData.notes,
+    course: eventData.courseId,
+    // convert format FE -> BE
     startTime: combineDateTime(eventData.date, eventData.timeStart),
     endTime: eventData.timeEnd ? combineDateTime(eventData.date, eventData.timeEnd) : undefined,
+    reminders: eventData.reminders,
   };
 
   const res = await api.post('/schedule', payload);
@@ -41,7 +44,7 @@ export const useCreateEventMutation = () => {
   return useMutation({
     mutationFn: createEventAPI,
     onSuccess: () => {
-      toast.success("Đã tạo sự kiện thành công!");
+      toast.success("Đã tạo sự kiện và cài đặt nhắc nhở!");
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
@@ -51,27 +54,29 @@ export const useCreateEventMutation = () => {
   });
 };
 
-// --- 2. CẬP NHẬT (Update) - Phần còn thiếu ---
 type UpdateEventData = {
     id: string;
-    data: any; // Dữ liệu từ form
-    reminders?: any[]; // (Backend chưa xử lý cái này, nhưng giữ tham số để không lỗi form)
+    data: any; 
+    reminders?: any[]; 
 }
 
-const updateEventAPI = async ({ id, data }: UpdateEventData) => {
-    // Chuẩn bị payload, chỉ gửi những gì thay đổi hoặc gửi đè
+// --- 2. UPDATE ---
+const updateEventAPI = async ({ id, data, reminders }: UpdateEventData) => {
     const payload = {
         title: data.title,
         type: data.type,
         location: data.location,
-        courseId: data.courseId,
-        // Nếu có date/time mới thì tính lại startTime/endTime
+        // ✨ UPDATE: Thêm notes
+        notes: data.notes,
+        course: data.courseId,
         ...(data.date && data.timeStart && { 
             startTime: combineDateTime(data.date, data.timeStart) 
         }),
         ...(data.date && data.timeEnd && { 
             endTime: combineDateTime(data.date, data.timeEnd) 
         }),
+        // ✨ UPDATE: Gửi reminders mới
+        reminders: reminders 
     };
 
     const res = await api.put(`/schedule/${id}`, payload);
@@ -93,7 +98,7 @@ export const useUpdateEventMutation = () => {
     });
 };
 
-// --- 3. XÓA (Delete) ---
+// --- 3.(Delete) ---
 export const useDeleteEventMutation = () => {
     const queryClient = useQueryClient();
     return useMutation({

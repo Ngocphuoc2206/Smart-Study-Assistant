@@ -24,6 +24,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea"; 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
@@ -36,6 +37,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReminderEditor } from "./ReminderEditor";
+import { channel } from "diagnostics_channel";
 
 
 // --- Mặc định nhắc nhở (Giữ nguyên) ---
@@ -99,9 +101,10 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
       timeStart: data.timeStart,
       timeEnd: data.timeEnd,
       location: data.location,
+      notes: data.notes, // Gửi notes
     };
     
-    const reminders = data.reminders?.map(r => r.offsetSec);
+    const reminders = data.reminders?.map(r =>({ offsetSec: r.offsetSec, channel: r.channel }));
 
     // Kiểm tra xem đây là TẠO MỚI hay CẬP NHẬT
     if (existingEventId) {
@@ -290,6 +293,25 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
               <FormLabel>Địa điểm (Tùy chọn)</FormLabel>
               <FormControl>
                 <Input placeholder="Ví dụ: Phòng A1.101" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* ✨ UPDATE: Thêm trường Ghi chú */}
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Ghi chú</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Ghi chú thêm về sự kiện..." 
+                  className="resize-none" 
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

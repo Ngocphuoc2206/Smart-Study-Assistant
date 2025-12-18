@@ -19,5 +19,6 @@ export type StudyEvent = {
   timeEnd?: string; // "HH:mm"
   course?: Course; // Liên kết với môn học (có màu)
   location?: string;
+  notes?: string;
   reminders?: { offsetSec: number; channel: 'inapp' | 'email' | 'webpush' }[];
 };

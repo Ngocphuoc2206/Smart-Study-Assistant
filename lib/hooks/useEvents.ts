@@ -25,6 +25,7 @@ const mapScheduleToEvent = (item: any): StudyEvent => {
     title: item.title,
     type: item.type,
     location: item.location,
+    notes: item.notes,
     date: format(start, "yyyy-MM-dd"),
     timeStart: format(start, "HH:mm"),
     timeEnd: end ? format(end, "HH:mm") : undefined,

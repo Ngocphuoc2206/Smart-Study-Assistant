@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Response } from "express";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 import { Reminder } from "../models/reminder";
 
 

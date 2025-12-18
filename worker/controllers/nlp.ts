@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Response } from "express";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 import { generateResponse, NLPService } from "../services/nlpService";
 import { DetectedIntent, mapIntentName, toVNEntities, VNIntentName } from "../../shared/type";
 import { AuthRequest } from "../middlewares/authMiddleware";

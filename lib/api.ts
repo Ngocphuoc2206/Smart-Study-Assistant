@@ -1,5 +1,5 @@
 // lib/api.ts
-import { logDebug } from '@/worker/utils/logger';
+import { logDebug } from '@/shared/logger';
 import axios from 'axios';
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api',

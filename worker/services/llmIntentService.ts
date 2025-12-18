@@ -3,7 +3,7 @@ import { OpenAI } from "openai";
 import path from "path";
 import fs from "fs";
 import { RootConfig } from "@/shared/type";
-import { logDebug, logError } from "../utils/logger";
+import { logDebug, logError } from "../../shared/logger";
 
 // Load list intent from json cofig
 const intentConfig: RootConfig = (() => {

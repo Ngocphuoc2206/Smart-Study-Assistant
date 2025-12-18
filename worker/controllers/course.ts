@@ -2,7 +2,7 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Course } from "../models/course";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 
 // POST /api/courses
 export const createCourse = async (req: AuthRequest, res: Response) => {

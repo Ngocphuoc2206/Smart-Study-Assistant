@@ -2,7 +2,7 @@
 import nodemailer from "nodemailer";
 import { Notification } from "../models/notification";
 import { User } from "../models/user";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 
 //Config
 const transporter = nodemailer.createTransport({

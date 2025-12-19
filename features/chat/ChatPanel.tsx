@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // features/chat/ChatPanel.tsx
 "use client";
 
@@ -18,7 +19,8 @@ import { NLPPreviewDialog } from "./NLPPreviewDialog";
 import { useChatStore } from "@/lib/hooks/useChatStore";
 import { mockParseNLP, NLPResult } from "./mockNLP";
 import { Bot, Send, Loader2 } from "lucide-react";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
+import api from "@/lib/api";
 
 type Message = {
   id: string;
@@ -35,78 +37,111 @@ const QUICK_SUGGESTIONS = [
 
 export default function ChatPanel() {
   const { isOpen, onClose } = useChatStore();
-  
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: uuidv4(),
-      role: 'assistant',
-      content: 'Xin chào! Bạn cần tôi giúp gì? (Ví dụ: "Thêm bài tập AI thứ 6 này")',
+      role: "assistant",
+      content:
+        'Xin chào! Bạn cần tôi giúp gì? (Ví dụ: "Thêm bài tập AI thứ 6 này")',
       timestamp: new Date().toISOString(),
-    }
+    },
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
-  // State cho Dialog
-  const [previewData, setPreviewData] = useState<NLPResult | null>(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  
+
+  const [pendingIntent, setPendingIntent] = useState<string | null>(null);
+  const [pendingEntities, setPendingEntities] = useState<any>(null);
+
+  //normal channel
+  const normalizeChannel = (text: string) => {
+    const t = text.trim().toLowerCase();
+    if (t === "email" || t.includes("email")) return "Email";
+    if (
+      t === "in-app" ||
+      t === "inapp" ||
+      t.includes("in-app") ||
+      t.includes("app")
+    )
+      return "In-app";
+    return null;
+  };
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Tự động cuộn
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({
-        top: scrollAreaRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-  }, [messages]);
+    const root = scrollAreaRef.current;
+    if (!root) return;
 
-  const handleSubmit = async (text: string) => {
-    if (!text.trim() || isLoading) return;
+    const viewport = root.querySelector(
+      '[data-slot="scroll-area-viewport"]'
+    ) as HTMLDivElement | null;
 
-    // 1. Thêm tin nhắn của User
+    if (!viewport) return;
+
+    viewport.scrollTo({
+      top: viewport.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages, isLoading]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = inputValue.trim();
+    if (!text) return;
+
     const userMessage: Message = {
       id: uuidv4(),
-      role: 'user',
+      role: "user",
       content: text,
       timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsLoading(true);
-
-    // 2. Gọi Mock NLP
     try {
-      const result = await mockParseNLP(text);
-      
-      // 3. Xử lý kết quả
-      
-      // 3a. Nếu đủ entity -> Mở Dialog
-      if (result.intent === 'add_event' && !result.missingEntities) {
-        setPreviewData(result);
-        setIsPreviewOpen(true);
-      }
-      
-      // 3b. Thêm tin nhắn trả lời của Bot
+      const selectedChannel = pendingIntent ? normalizeChannel(text) : null;
+      const res = await api.post("/chat/message", {
+        message: text,
+        pendingIntent,
+        pendingEntities,
+        selectedChannel: selectedChannel ?? undefined,
+      });
+
+      const data = res.data?.data;
+      const botText =
+        data?.reply ?? data?.responseText ?? "Mình chưa có phản hồi.";
+
       const botMessage: Message = {
         id: uuidv4(),
-        role: 'assistant',
-        content: result.responseText,
+        role: "assistant",
+        content: botText,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, botMessage]);
+      if (data?.needsFollowUp) {
+        setPendingIntent(data.pendingIntent);
+        setPendingEntities(data.pendingEntities);
+      } else {
+        setPendingIntent(null);
+        setPendingEntities(null);
+      }
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const msg =
+        status === 401
+          ? "Bạn cần đăng nhập trước khi chat."
+          : err?.response?.data?.message || "Có lỗi xảy ra.";
 
-    } catch (error) {
-      // 3c. Xử lý lỗi
-      const errorMessage: Message = {
-        id: uuidv4(),
-        role: 'assistant',
-        content: "Đã có lỗi xảy ra. Vui lòng thử lại.",
-        timestamp: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: uuidv4(),
+          role: "assistant",
+          content: msg,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -121,7 +156,7 @@ export default function ChatPanel() {
   return (
     <>
       <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent className="w-full sm:w-[540px] flex flex-col p-0">
+        <SheetContent className="w-full sm:w-[540px] h-dvh flex flex-col p-0 overflow-hidden">
           <SheetHeader className="p-6 border-b">
             <SheetTitle className="flex items-center gap-2">
               <Bot /> Trợ lý học tập
@@ -130,9 +165,13 @@ export default function ChatPanel() {
               Nhập yêu cầu bằng ngôn ngữ tự nhiên.
             </SheetDescription>
           </SheetHeader>
-          
+
           {/* A11y: Thông báo tin nhắn mới */}
-          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef} aria-live="polite">
+          <ScrollArea
+            className="flex-1 p-4 min-h-0"
+            ref={scrollAreaRef}
+            aria-live="polite"
+          >
             <div className="space-y-4">
               {messages.map((msg) => (
                 <MessageBubble
@@ -143,7 +182,7 @@ export default function ChatPanel() {
                 />
               ))}
               {isLoading && (
-                 <MessageBubble
+                <MessageBubble
                   role="assistant"
                   content="Đang xử lý..."
                   timestamp={new Date().toISOString()}
@@ -151,14 +190,14 @@ export default function ChatPanel() {
               )}
             </div>
           </ScrollArea>
-          
+
           <div className="p-4 border-t bg-background">
             {/* Gợi ý nhanh (Chips) */}
             <div className="flex flex-wrap gap-2 mb-2">
               {QUICK_SUGGESTIONS.map((q) => (
-                <Badge 
-                  key={q} 
-                  variant="outline" 
+                <Badge
+                  key={q}
+                  variant="outline"
                   className="cursor-pointer"
                   onClick={() => handleSuggestionClick(q)}
                 >
@@ -166,35 +205,30 @@ export default function ChatPanel() {
                 </Badge>
               ))}
             </div>
-            
+
             {/* Ô nhập */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSubmit(inputValue);
-              }}
-              className="flex items-center gap-2"
-            >
+            <form onSubmit={handleSubmit} className="flex items-center gap-2">
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Ví dụ: Thêm bài tập AI thứ 6..."
                 disabled={isLoading}
               />
-              <Button type="submit" size="icon" disabled={isLoading || !inputValue.trim()}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              <Button
+                type="submit"
+                size="icon"
+                disabled={isLoading || !inputValue.trim()}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
               </Button>
             </form>
           </div>
         </SheetContent>
       </Sheet>
-      
-      {/* Dialog xem trước */}
-      <NLPPreviewDialog
-        isOpen={isPreviewOpen}
-        onClose={() => setIsPreviewOpen(false)}
-        data={previewData}
-      />
     </>
   );
 }

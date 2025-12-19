@@ -1,7 +1,7 @@
 // features/courses/CourseGrid.tsx
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo ,useEffect, use } from "react";
 import { useCourses, CourseWithEventCount } from "@/lib/hooks/useCourses";
 import { useAuthStore } from "@/lib/hooks/useAuthStore";
 import { useCourseMutations } from "@/lib/hooks/useCourseMutations";
@@ -23,7 +23,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { AlertCircle, CalendarDays, Edit, Loader2, Plus, Search, Trash2, UserPlus } from "lucide-react";
+import { AlertCircle, CalendarDays, CheckCircle2, Edit, Loader2, Plus, Search, Trash2, UserPlus } from "lucide-react";
 import { useDebounce } from "use-debounce";
 
 export default function CourseGrid() {
@@ -31,10 +31,10 @@ export default function CourseGrid() {
   // --- Auth & Role ---
   const user = useAuthStore((state) => state.user);
   const isTeacher = user?.role === "teacher"; // Xác định quyền
-
+  const currentUserId = user?.id;
   // --- State & Data Fetching ---
-  const { data: courses, isLoading, isError } = useCourses();
-  const { createMutation, updateMutation, deleteMutation } = useCourseMutations();
+  const { data: courses, isLoading, isError, refetch } = useCourses();
+  const { createMutation, updateMutation, deleteMutation, registerMutation } = useCourseMutations();
   
   // --- State cho Dialogs ---
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -45,6 +45,10 @@ export default function CourseGrid() {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch] = useDebounce(searchTerm, 300);
   const [sort, setSort] = useState<'name_asc' | 'event_desc'>('name_asc');
+
+  useEffect(() => {
+    refetch();
+  }, []);
 
   // Logic lọc và sắp xếp
   const filteredCourses = useMemo(() => {
@@ -70,27 +74,39 @@ export default function CourseGrid() {
   // --- Handlers ---
   const handleAddSubmit = (data: CourseFormValues) => {
     createMutation.mutate(data, {
-      onSuccess: () => setIsAddOpen(false),
+      onSuccess: () => {setIsAddOpen(false);
+      refetch();
+      },
     });
   };
   
   const handleEditSubmit = (data: CourseFormValues) => {
     if (!editCourse) return;
     updateMutation.mutate({ id: editCourse.id, data }, {
-      onSuccess: () => setEditCourse(null),
+      onSuccess: () => { setEditCourse(null);
+      refetch();
+      },
     });
   };
   
   const confirmDelete = () => {
     if (!deleteCourse) return;
     deleteMutation.mutate(deleteCourse.id, {
-      onSuccess: () => setDeleteCourse(null),
+      onSuccess: () => {setDeleteCourse(null);
+      refetch();
+      },
     });
   };
 
   const handleRegister = (courseId: string) => {
-    // Placeholder register handler — replace with real mutation if available
-    console.log("Yêu cầu đăng ký môn học, ID:", courseId);
+      // Gọi hàm đăng ký
+      registerMutation.mutate(courseId, {
+          onSuccess: () => {
+              // Đăng ký xong thì gọi refetch()
+              // Để danh sách cập nhật (ví dụ: nút Đăng ký đổi thành Đã tham gia)
+              refetch(); 
+          }
+      });
   };
 
   // --- Render ---
@@ -124,7 +140,9 @@ export default function CourseGrid() {
             onEdit={() => setEditCourse(course)}
             onDelete={() => setDeleteCourse(course)}
             onRegister={() => handleRegister(course.id)}
+            currentUserId={currentUserId}
             isTeacher={isTeacher}
+            isRegistering={registerMutation.isPending}
           />
         ))}
       </div>
@@ -229,14 +247,20 @@ function CourseCard({
   onEdit, 
   onDelete,
   onRegister,
+  currentUserId,
+  isRegistering,
   isTeacher
 }: {
   course: CourseWithEventCount,
   onEdit: () => void,
   onDelete: () => void,
   onRegister?: () => void,
+  currentUserId?: string,
+  isRegistering?: boolean,
   isTeacher?: boolean
 }) {
+
+  const isJoined = course.students?.includes(currentUserId || "");
  // Render chung cho phần nội dung Card
   const CardContentInner = () => (
     <>
@@ -248,8 +272,7 @@ function CourseCard({
           </div>
         </CardHeader>
         <CardContent className="flex-grow">
-             {/* Có thể hiển thị thêm tên Giảng viên ở đây nếu API trả về */}
-             {/* <p className="text-sm text-muted-foreground">GV: {course.teacherName}</p> */}
+            <p className="text-sm text-muted-foreground">GV: {course.teacherName}</p> 
         </CardContent>
     </>
   );
@@ -295,17 +318,31 @@ function CourseCard({
                 <span>{course.eventCount} Sự kiện</span>
             </div>
             
-            <Button size="sm" onClick={() => onRegister?.()} variant="secondary" className="gap-2">
-                <UserPlus className="h-4 w-4" />
-                Đăng ký
-            </Button>
+            {/* 👇 Dùng điều kiện để hiển thị nút */}
+            {isJoined ? (
+                // Nếu ĐÃ tham gia -> Hiện nút Check xanh
+                <Button size="sm" variant="ghost" className="gap-2 text-green-600 cursor-default hover:text-green-600 hover:bg-transparent">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Đã tham gia
+                </Button> 
+            ) : (
+                // Nếu CHƯA tham gia -> Hiện nút Đăng ký
+                <Button 
+                    size="sm" 
+                    onClick={() => onRegister?.()} 
+                    variant="secondary" 
+                    className="gap-2"
+                    disabled={isRegistering} // Disable khi đang loading
+                >
+                    {isRegistering ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <UserPlus className="h-4 w-4" />
+                    )}
+                    Đăng ký
+                </Button>
+            )}
             
-            {/* Nếu muốn hiển thị trạng thái đã đăng ký:
-            <Button size="sm" variant="ghost" className="gap-2 text-green-600 cursor-default hover:text-green-600 hover:bg-transparent">
-                <CheckCircle2 className="h-4 w-4" />
-                Đã tham gia
-            </Button> 
-            */}
         </CardFooter>
     </Card>
   );

@@ -32,7 +32,7 @@ export const useCourseMutations = () => {
   
   
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['course'] });
+    queryClient.invalidateQueries({ queryKey: ['courses'] });
     
     queryClient.invalidateQueries({ queryKey: ['events'] });
   };
@@ -68,18 +68,19 @@ export const useCourseMutations = () => {
   });
   
  const registerMutation = useMutation({
-       mutationFn: async (courseId: string) => {
-           // Gọi API: POST /api/courses/{courseId}/register
-           return axios.post(`/api/courses/${courseId}/register`);
-       },
-       onSuccess: () => {
-           queryClient.invalidateQueries({ queryKey: ['courses'] });
-           toast.success("Đăng ký thành công!");
-       },
-       onError: (error) => {
-           toast.error("Đăng ký thất bại");
-       }
-   });
+        mutationFn: async (courseId: string) => {
+            // Gọi đúng cái đường dẫn bạn vừa tạo ở Backend
+            const res = await api.post(`/course/${courseId}/register`);
+            return res.data;
+        },
+        onSuccess: () => {
+            toast.success("Đăng ký thành công! Chúc mừng bạn.");
+            // Lưu ý: Chúng ta sẽ làm mới danh sách ở bên file CourseGrid
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Đăng ký thất bại");
+        }
+    });
 
    return { createMutation, updateMutation, deleteMutation, registerMutation };
 };

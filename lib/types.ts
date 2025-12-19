@@ -7,6 +7,9 @@ export type Course = {
   code?: string;
   description?: string;
   color: string; // Mã màu hex, ví dụ: '#ef4444'
+  students: string[]; // Danh sách ID sinh viên đã đăng ký
+  teacherName?: string;
+  teacherEmail?: string;
 };
 
 /** Đại diện cho một Sự kiện học tập */
@@ -22,3 +25,11 @@ export type StudyEvent = {
   notes?: string;
   reminders?: { offsetSec: number; channel: 'inapp' | 'email' | 'webpush' }[];
 };
+
+export interface StudentInfo {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatar?: string;
+}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/hooks/useEvents.ts
 "use client";
 
@@ -11,8 +12,6 @@ const mapScheduleToEvent = (item: any): StudyEvent => {
   const start = parseISO(item.startTime);
   const end = item.endTime ? parseISO(item.endTime) : null;
 
-  // Vì Backend đã .populate(), nên item.courseId sẽ là một Object chứa thông tin môn
-  // Nếu không có môn (null), ta trả về undefined
   const courseInfo = (item.courseId && typeof item.courseId === 'object') ? {
       id: item.courseId._id,
       name: item.courseId.name,
@@ -61,12 +60,12 @@ export const useUpcomingEvents = (limit: number = 5) => {
     queryKey: ['events', 'upcoming', limit], 
     queryFn: async () => {
         const now = new Date();
+        const to = new Date(now);
+        to.setDate(to.getDate() + 30);
         const res = await api.get('/schedule', {
             params: {
                 from: now.toISOString(),
-                limit: limit,
-                page: 1,
-                sort: 'asc'
+                to: to.toISOString(),
             }
         });
         

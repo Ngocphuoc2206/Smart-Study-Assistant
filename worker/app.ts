@@ -57,7 +57,7 @@ export const createApp = async () => {
   app.use("/api/course", courseRouter);
   app.use("/api/chat-history", chatHistoryRouter);
   app.use("/api/teacher", teacherRouter);
-  app.use("/api/remind", remindRouter);
+  app.use("/api/reminders", remindRouter);
   app.use("/api/chat", chatRouter);
   app.use("/api/notifications", notificationRouter)
   app.get("/api/version", (req, res) => {

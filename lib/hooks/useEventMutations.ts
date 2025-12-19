@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/hooks/useEventMutations.ts
 "use client";
 

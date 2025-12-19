@@ -14,24 +14,15 @@ export type NotificationItem = {
   read: boolean;
 };
 
-// --- API FETCH (Sửa lại để không dùng mockEvents nữa) ---
 const fetchNotifications = async (): Promise<{ upcoming: NotificationItem[], sent: NotificationItem[] }> => {
-  // ⚠️ HIỆN TẠI: Trả về rỗng để App chạy được (vì chưa có API Notification)
-  return { upcoming: [], sent: [] };
-
-  /* 👉 KHI NÀO CÓ BACKEND NOTIFICATION, HÃY DÙNG CODE NÀY:
-  
   const res = await api.get('/notifications'); 
-  // Giả sử server trả về: { upcoming: [...], sent: [...] }
   return res.data.data;
-  */
 };
 
 export const useNotifications = () => {
   return useQuery({
     queryKey: ['notifications'],
     queryFn: fetchNotifications,
-    // Tắt refetch để đỡ tốn tài nguyên khi chưa có API
     enabled: true, 
   });
 };
@@ -42,7 +33,7 @@ export const useNotificationMutations = () => {
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id: string) => {
-      // await api.put(`/notifications/${id}/read`); // Gọi API thật sau này
+      await api.patch(`/notifications/${id}/read`);
       console.log("Mark as read:", id);
     },
     onSuccess: () => {
@@ -52,7 +43,7 @@ export const useNotificationMutations = () => {
 
   const snoozeMutation = useMutation({
     mutationFn: async ({ id, duration }: { id: string, duration: 'hour' | 'day' }) => {
-      // await api.post(`/notifications/${id}/snooze`, { duration }); // Gọi API thật sau này
+      await api.patch(`/notifications/${id}/snooze`, { duration });
       toast.info(`Đã dời lịch nhắc nhở (Giả lập)`);
     },
     onSuccess: () => {

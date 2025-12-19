@@ -4,7 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import api from '../api';
 import { toast } from 'sonner';
 
-type User = {
+export type User = {
   id: string;
   email: string;
   firstName: string;
@@ -13,7 +13,7 @@ type User = {
   avatarUrl?: string;
 };
 
-type AuthState = {
+export type AuthState = {
   user: User | null;
   accessToken: string | null;
   bootstrapped: boolean;

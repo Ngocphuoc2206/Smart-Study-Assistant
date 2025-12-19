@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/hooks/useCourseMutations.ts
 "use client";
 
@@ -23,7 +24,7 @@ const updateCourseAPI = async ({ id, data }: { id: string, data: Partial<CourseI
 
 const deleteCourseAPI = async (id: string) => {
   const res = await api.delete(`/course/${id}`);
-  return res.data;
+  return res.data.data;
 };
 
 // --- HOOK ---

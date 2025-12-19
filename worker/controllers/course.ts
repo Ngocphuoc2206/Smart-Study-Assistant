@@ -106,6 +106,7 @@ export const getCourses = async (req: any, res: Response) => {
 
             const courses = await Course.find(query)
                                     .populate({ path: 'teacher', select: 'firstName lastName email' })
+                                    .populate({ path: 'students', select: 'firstName lastName email' })
                                     .sort({ createdAt: -1 });
 
         return res.status(200).json({
@@ -343,4 +344,35 @@ export const registerCourse = async (req: AuthRequest, res: Response) => {
         });
     }   
 };
+// POST /api/courses/remove-student
 
+export const removeStudentFromCourse = async (req: AuthRequest, res: Response) => {
+    try {
+        const { courseId, studentId } = req.body;
+
+        if (!courseId || !studentId) {
+            return res.status(400).json({ success: false, message: "Thiếu thông tin courseId hoặc studentId" });
+        }
+
+        // Cách 1: Dùng $pull (Nhanh, gọn) - Code bạn đang dùng
+        const updatedCourse = await Course.findByIdAndUpdate(
+            courseId,
+            { $pull: { students: studentId } },
+            { new: true }
+        );
+
+        if (!updatedCourse) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy khóa học!" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Đã xóa sinh viên thành công!",
+            data: updatedCourse
+        });
+
+    } catch (error) {
+        console.error("Lỗi server:", error);
+        return res.status(500).json({ success: false, message: "Lỗi Server" });
+    }
+};

@@ -13,12 +13,23 @@ const mapScheduleToEvent = (item: any): StudyEvent => {
 
   // Vì Backend đã .populate(), nên item.courseId sẽ là một Object chứa thông tin môn
   // Nếu không có môn (null), ta trả về undefined
-  const courseInfo = (item.courseId && typeof item.courseId === 'object') ? {
-      id: item.courseId._id,
-      name: item.courseId.name,
-      color: item.courseId.color,
-      code: item.courseId.code
-  } : undefined;
+  const rawCourse = item.course || item.courseId;
+
+  let courseInfo = undefined;
+
+  // Kiểm tra nếu rawCourse tồn tại và là object (đã populate)
+  if (rawCourse && typeof rawCourse === 'object') {
+    courseInfo = {
+      id: rawCourse._id || rawCourse.id, // Chấp nhận cả _id và id
+      name: rawCourse.name,
+      color: rawCourse.color,
+      code: rawCourse.code
+    };
+  } 
+  // (Tùy chọn) Nếu rawCourse là string (chưa populate), bạn có thể log ra để debug
+  else if (rawCourse && typeof rawCourse === 'string') {
+    console.warn("Dữ liệu khóa học chưa được populate từ Backend:", rawCourse);
+  }
 
   return {
     id: item._id,

@@ -78,6 +78,11 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
             <span>{event.location}</span>
           </div>
         )}
+        {event.notes && (
+          <div className="text-sm text-muted-foreground">
+            <p className="line-clamp-3" title={event.notes}>{event.notes}</p>
+          </div>
+        )}
       </CardContent>
       
       <CardFooter className="flex justify-between items-center">

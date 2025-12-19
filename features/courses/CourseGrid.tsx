@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/static-components */
 // features/courses/CourseGrid.tsx
 "use client";
 
@@ -220,7 +222,7 @@ export default function CourseGrid() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
                   <AlertDialogDescription>
-                  Xóa môn "{deleteCourse?.name}"? Hành động này không thể hoàn tác.
+                  Xóa môn &qout{deleteCourse?.name}&qout? Hành động này không thể hoàn tác.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

@@ -32,14 +32,10 @@ export default function DashboardPage() {
   };
   
   const handleOpenChat = () => {
-    // Kích hoạt state global để mở ChatPanel (Prompt 2)
     openChat();
   };
-  
-  // (const MockHeader... ĐÃ BỊ XÓA)
 
   return (
-    // Các div layout cha đã bị xóa, chỉ giữ lại nội dung chính
     <div className="flex flex-col lg:flex-row gap-6">
       
       {/* Cột trái (grow) */}

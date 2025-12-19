@@ -24,3 +24,14 @@ export const signAccessToken = (payload: JwtPayload): string => {
 export const verifyAccessToken = (token: string): JwtPayload => {
   return jwt.verify(token, JWT_SECRET as string) as JwtPayload;
 };
+
+export const signRefreshToken = (payload: JwtPayload): string => {
+  const options: SignOptions = {
+    expiresIn: JWT_ACCESS_EXPIRATION_TTL || "14d",
+  }
+  return jwt.sign(payload, JWT_SECRET as string, options);
+}
+
+export const verifyRefreshToken = (token: string): JwtPayload => {
+  return jwt.verify(token, JWT_SECRET as string) as JwtPayload;
+}

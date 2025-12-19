@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { generateNotificationFromRemiders } from "../services/notificationCron";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 
 export function startNotificationCron(){
     //run each 5 minutes

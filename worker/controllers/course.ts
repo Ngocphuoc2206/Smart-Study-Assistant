@@ -2,7 +2,8 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Course } from "../models/course";
-import { logDebug } from "../../shared/logger";
+import { logDebug } from "../utils/logger";
+import { User } from "../models/user";
 
 // POST /api/courses
 export const createCourse = async (req: AuthRequest, res: Response) => {
@@ -65,60 +66,56 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
 };
 
 // GET /api/courses
-export const getCourses = async (req: AuthRequest, res: Response) => {
+export const getCourses = async (req: any, res: Response) => {
     try {
-        // 1. Lấy tham số từ URL (Query Params)
         const { teacher, student } = req.query;
-        
         let query: any = {};
 
-        // 2. Xây dựng bộ lọc
-        if (teacher) {
-            // Nếu muốn tìm theo giảng viên
-            query.teacher = teacher;
-        }
-
-        if (student) {
-            // Nếu muốn tìm khóa học mà sinh viên này tham gia
-            // Mongoose tự động tìm xem ID này có nằm trong mảng 'students' không
-            query.students = student;
-        }
-
-        // 3. Logic Fallback (Nếu không truyền gì trên URL)
-        // Thì lấy khóa học của chính người đang đăng nhập (Logic cũ)
+        // Nếu KHÔNG truyền param lọc (Trường hợp vào trang danh sách chung)
         if (!teacher && !student) {
-             if (!req.user?.userId) {
-                return res.status(401).json({ 
-                    success: false, 
-                    message: "Unauthorized: Please login or provide teacher/student ID" 
-                });
+             const userId = req.user.userId; // Lấy ID từ token
+
+             // Gọi DB để check Role chuẩn xác
+             const currentUser = await User.findById(userId);
+
+             // Log ra để kiểm tra
+             console.log("User đang login:", currentUser?.email);
+             console.log("Role trong DB:", currentUser?.role); 
+
+             if (currentUser?.role === 'student') {
+                 // NẾU LÀ SINH VIÊN: Lấy tất cả (Query rỗng)
+                 console.log("=> Logic: Student xem tất cả");
+                 query = {}; 
+             } else {
+                 // NẾU KHÔNG PHẢI SINH VIÊN: Chỉ lấy môn của họ
+                 console.log("=> Logic: Teacher/User chỉ xem môn của mình");
+                 query = {
+                    $or: [
+                        { teacher: userId },
+                        { students: userId }
+                    ]
+                 };
              }
-             const userId = req.user.userId;
-             query = {
-                $or: [
-                    { teacher: userId },
-                    { students: userId }
-                ]
-             };
+        } else {
+            // Logic lọc theo URL (giữ nguyên)
+            if (teacher) query.teacher = teacher;
+            if (student) query.students = student;
         }
 
-        logDebug("Fetching courses with query:", query);
+        console.log("Query cuối cùng gửi xuống MongoDB:", JSON.stringify(query));
 
-        // 4. Thực hiện tìm kiếm
-        const courses = await Course.find(query).sort({ createdAt: -1 });
+            const courses = await Course.find(query)
+                                    .populate({ path: 'teacher', select: 'firstName lastName email' })
+                                    .sort({ createdAt: -1 });
 
         return res.status(200).json({
             success: true,
-            count: courses.length, // Thêm số lượng để dễ check
             data: courses
         });
 
     } catch (error) {
-        logDebug("Error fetching courses: ", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error"
-        });
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Lỗi Server" });
     }
 };
 
@@ -310,3 +307,40 @@ export const getCourseStudents = async (req: AuthRequest, res: Response) => {
         });
     }
 };
+
+// POST /api/courses/:id/register
+
+export const registerCourse = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user?.userId;
+
+        const updatedCourse = await Course.findByIdAndUpdate(
+            id,
+            { $addToSet: { students: userId } },
+            { new: true }
+        );
+
+        if (!updatedCourse) {
+            return res.status(404).json({
+                success: false,
+                message: "Không tìm thấy khóa học"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Đăng ký khóa học thành công",
+            data: updatedCourse
+        });
+
+    } catch (error: any) {
+        console.error("Lỗi đăng ký khóa học:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Lỗi server",
+            error: error.message
+        });
+    }   
+};
+

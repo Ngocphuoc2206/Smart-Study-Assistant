@@ -72,7 +72,11 @@ export const useUpcomingEvents = (limit: number = 5) => {
         const schedules = res.data?.data || [];
         return schedules.map(mapScheduleToEvent);
     },
-    staleTime: 1000 * 60 * 5, 
+    //staleTime: 1000 * 60 * 5, 
+    // SỬA: Xóa dòng staleTime 5 phút, hoặc set về 0
+    staleTime: 0, 
+    // Thêm: Tự động tải lại khi quay lại tab trình duyệt
+    refetchOnWindowFocus: true,
    });
 };
 

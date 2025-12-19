@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createCourse, getCourses, updateCourse, deleteCourse, getCourseStudents } from "../controllers/course";
+import { createCourse, getCourses, updateCourse, deleteCourse, getCourseStudents, registerCourse } from "../controllers/course";
 import { validate } from "uuid";
 import { validateTeacher } from "../middlewares/roleMiddleware";
 
@@ -10,4 +10,5 @@ courseRouter.get("/", getCourses);
 courseRouter.put("/:id", validateTeacher, updateCourse);
 courseRouter.delete("/:id", validateTeacher, deleteCourse);
 courseRouter.get("/:id/students", getCourseStudents);
+courseRouter.post("/:id/register", registerCourse)
 export default courseRouter; 

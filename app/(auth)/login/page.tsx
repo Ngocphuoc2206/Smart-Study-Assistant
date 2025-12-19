@@ -6,54 +6,69 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/hooks/useAuthStore";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BookA, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
 
-// [UPDATE] Schema: Đổi username thành email, BỎ trường role
 const loginSchema = z.object({
-  email: z.string().email("Email không hợp lệ"), // Backend yêu cầu email
+  email: z.string().email("Email không hợp lệ"),
   password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
 });
+
+const routeByRole = (role?: string) => {
+  if (role === "admin") return "/admin";
+  return "/dashboard";
+};
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuthStore();
-  
-  // [UPDATE] State hiển thị xoay vòng khi đang gọi API
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { 
-        email: "", 
-        password: "" 
-        // [REMOVED] Bỏ default role
-    }, 
+    defaultValues: {
+      email: "",
+      password: "",
+    },
   });
 
-  // [UPDATE] Chuyển thành hàm async để chờ API
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
-    setIsLoading(true); // Bắt đầu loading
+    setIsLoading(true);
     try {
-        // Gọi hàm login từ store (hàm này giờ đã gọi API thật)
-        await login(data.email, data.password);
-        
-        // Login thành công -> Chuyển hướng
-        // (Lưu ý: Role được lưu trong store, bạn có thể check store.user.role để redirect nếu muốn)
-        router.push("/dashboard"); 
-        
+      await login(data.email, data.password);
+      const u = useAuthStore.getState().user;
+      router.push(routeByRole(u?.role));
     } catch (error) {
-        // Lỗi đã được Toast bên trong useAuthStore hoặc ở đây
-        console.error("Login failed", error);
+      console.error("Login failed", error);
     } finally {
-        setIsLoading(false); // Tắt loading dù thành công hay thất bại
+      setIsLoading(false);
     }
   };
 
@@ -74,9 +89,10 @@ export default function LoginPage() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@example.com" 
-                        {...field} 
-                        disabled={isLoading} // [UPDATE] Khóa khi đang load 
+                    <Input
+                      placeholder="name@example.com"
+                      {...field}
+                      disabled={isLoading} // [UPDATE] Khóa khi đang load
                     />
                   </FormControl>
                   <FormMessage />
@@ -90,8 +106,10 @@ export default function LoginPage() {
                 <FormItem>
                   <FormLabel>Mật khẩu</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} 
-                        disabled={isLoading} // [UPDATE] Khóa khi đang load 
+                    <Input
+                      type="password"
+                      {...field}
+                      disabled={isLoading} // [UPDATE] Khóa khi đang load
                     />
                   </FormControl>
                   <FormMessage />
@@ -101,16 +119,16 @@ export default function LoginPage() {
             {/* [REMOVED] Đã xóa phần <Select> chọn Role. 
                 Lý do: Server sẽ quyết định mik là ai dựa trên Email. 
             */}
-            
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {/* [UPDATE] Hiển thị icon loading */}
               {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Đang xử lý...
-                  </>
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang xử lý...
+                </>
               ) : (
-                  "Đăng nhập"
+                "Đăng nhập"
               )}
             </Button>
           </form>
@@ -119,7 +137,10 @@ export default function LoginPage() {
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">
           Chưa có tài khoản?{" "}
-          <Link href="/register" className="font-medium text-primary hover:underline">
+          <Link
+            href="/register"
+            className="font-medium text-primary hover:underline"
+          >
             Đăng ký
           </Link>
         </p>

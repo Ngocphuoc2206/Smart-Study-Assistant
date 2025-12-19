@@ -9,21 +9,24 @@ export type NotificationItem = {
   id: string;
   eventId: string;
   eventTitle: string;
-  channel: 'inapp' | 'email' | 'webpush';
+  channel: "inapp" | "email";
   reminderTime: string;
   read: boolean;
 };
 
-const fetchNotifications = async (): Promise<{ upcoming: NotificationItem[], sent: NotificationItem[] }> => {
-  const res = await api.get('/notifications'); 
+const fetchNotifications = async (): Promise<{
+  upcoming: NotificationItem[];
+  sent: NotificationItem[];
+}> => {
+  const res = await api.get("/notifications");
   return res.data.data;
 };
 
 export const useNotifications = () => {
   return useQuery({
-    queryKey: ['notifications'],
+    queryKey: ["notifications"],
     queryFn: fetchNotifications,
-    enabled: true, 
+    enabled: true,
   });
 };
 
@@ -37,19 +40,25 @@ export const useNotificationMutations = () => {
       console.log("Mark as read:", id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 
   const snoozeMutation = useMutation({
-    mutationFn: async ({ id, duration }: { id: string, duration: 'hour' | 'day' }) => {
+    mutationFn: async ({
+      id,
+      duration,
+    }: {
+      id: string;
+      duration: "hour" | "day";
+    }) => {
       await api.patch(`/notifications/${id}/snooze`, { duration });
       toast.info(`Đã dời lịch nhắc nhở (Giả lập)`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
-  
+
   return { markAsReadMutation, snoozeMutation };
 };

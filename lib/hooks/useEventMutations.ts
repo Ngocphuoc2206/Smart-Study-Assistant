@@ -67,7 +67,6 @@ const updateEventAPI = async ({ id, data, reminders }: UpdateEventData) => {
         title: data.title,
         type: data.type,
         location: data.location,
-        // ✨ UPDATE: Thêm notes
         notes: data.notes,
         course: data.courseId,
         ...(data.date && data.timeStart && { 
@@ -76,11 +75,10 @@ const updateEventAPI = async ({ id, data, reminders }: UpdateEventData) => {
         ...(data.date && data.timeEnd && { 
             endTime: combineDateTime(data.date, data.timeEnd) 
         }),
-        // ✨ UPDATE: Gửi reminders mới
-        reminders: reminders 
+        reminders: reminders
     };
 
-    const res = await api.put(`/schedule/${id}`, payload);
+    const res = await api.patch(`/schedule/${id}`, payload);
     return res.data.data;
 };
 

@@ -23,33 +23,42 @@ import teacherRouter from "./routes/teacher";
 import remindRouter from "./routes/reminder";
 import chatRouter from "./routes/chat";
 import notificationRouter from "./routes/notification";
+import adminRoute from "./routes/admin";
 //Configure env from file env
 dotenv.config();
-
 
 export const createApp = async () => {
   await connectDB();
 
   const app = express();
   //Parsing request body
-  app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+  app.use(
+    cors({
+      origin: process.env.FRONTEND_URL || "http://localhost:3000",
+      credentials: true,
+    })
+  );
 
   app.use(express.json());
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(cookieParser());
 
   // Createing and assigning a log file
-  var accessLogStream = fs.createWriteStream(path.join(__dirname, "..", "access.log"), {
-    flags: "a"
-  })
-  app.use(morgan("combined", { stream: accessLogStream }))
+  var accessLogStream = fs.createWriteStream(
+    path.join(__dirname, "..", "access.log"),
+    {
+      flags: "a",
+    }
+  );
+  app.use(morgan("combined", { stream: accessLogStream }));
 
   //#region Register Middleware
-  
+
   app.use(authMiddleware);
   //#endregion
 
   //Route
+  app.use("/api/admin", adminRoute);
   app.use("/api/auth", authRouter);
   app.use("/api/task", taskRouter);
   app.use("/api/schedule", scheduleRouter);
@@ -59,7 +68,7 @@ export const createApp = async () => {
   app.use("/api/teacher", teacherRouter);
   app.use("/api/reminders", remindRouter);
   app.use("/api/chat", chatRouter);
-  app.use("/api/notifications", notificationRouter)
+  app.use("/api/notifications", notificationRouter);
   app.get("/api/version", (req, res) => {
     res.json({
       version: process.env.API_VERSION,

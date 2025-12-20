@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/hooks/useCourses.ts
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
 import { Course, StudentInfo } from "@/lib/types";
 import api from "@/lib/api";
-import { de } from "chrono-node";
 
 // Because BE none return eventCount, define type similar to Course
 export type CourseWithEventCount = Course & {
@@ -57,8 +57,7 @@ const fetchCourses = async (): Promise<CourseWithEventCount[]> => {
 
 export const useCourses = () => {
   return useQuery({
-    queryKey: ['courses'], 
+    queryKey: ["courses"],
     queryFn: fetchCourses,
-    enabled: false,
   });
 };

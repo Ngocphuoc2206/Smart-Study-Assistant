@@ -20,7 +20,7 @@ export type StudyEvent = {
   date: string; // ISO date string (YYYY-MM-DD)
   timeStart: string; // "HH:mm"
   timeEnd?: string; // "HH:mm"
-  course?: Course; // Liên kết với môn học (có màu)
+  course?: Course;
   location?: string;
   notes?: string;
   reminders?: { offsetSec: number; channel: 'inapp' | 'email' | 'webpush' }[];

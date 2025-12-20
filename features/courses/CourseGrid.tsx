@@ -319,27 +319,36 @@ function CourseCard({
   isRegistering?: boolean;
   isTeacher?: boolean;
 }) {
-  const isJoined = course.students?.includes(currentUserId || "");
-  // Render chung cho phần nội dung Card
+
+  const isJoined = Array.isArray(course.students) && course.students.some((s: any) => {
+      // Trường hợp 1: Nếu Hook của bạn đã map _id thành id
+      const studentId = s.id || s._id; 
+      
+      // Trường hợp 2: Nếu lỡ s vẫn là string (dữ liệu cũ/lỗi populate) thì lấy chính nó
+      const idToCheck = typeof s === 'object' ? studentId : s;
+
+      return idToCheck?.toString() === currentUserId?.toString();
+  });
+ // Render chung cho phần nội dung Card
   const CardContentInner = () => (
     <>
-      <CardHeader className="flex-row items-center gap-4 space-y-0">
-        <span
-          className="h-10 w-10 rounded-lg flex-shrink-0"
-          style={{ backgroundColor: course.color }}
-        />
-        <div>
-          <CardTitle className="line-clamp-1" title={course.name}>
-            {course.name}
-          </CardTitle>
-          <CardDescription>{course.code}</CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        <p className="text-sm text-muted-foreground">
-          GV: {course.teacherName}
-        </p>
-      </CardContent>
+        <CardHeader className="flex flex-col items-center gap-2 space-y-0 text-center">
+          <span className="h-10 w-10 rounded-lg flex-shrink-0" style={{ backgroundColor: course.color }} />
+          <div>
+            <CardTitle className="line-clamp-1" title={course.name}>{course.name}</CardTitle>
+            <CardDescription className="mt-1">{course.code}</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="flex-grow">
+            <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                    <p className="text-sm text-muted-foreground">Giảng viên: {course.teacherName}</p>
+                </div>
+                <div className="flex-1">
+                    <p className="text-sm text-muted-foreground line-clamp-3" title={course.description}>Mô tả:{course.description}</p>
+                </div>
+            </div>
+        </CardContent>
     </>
   );
 

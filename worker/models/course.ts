@@ -32,4 +32,7 @@ const courseSchema = new Schema<ICourse>({
     timestamps: true
 });
 
+//Create index
+courseSchema.index({name: 1, code: 1}, {unique: true});
+
 export const Course = model<ICourse>("Course", courseSchema);

@@ -1,9 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// lib/hooks/useAuthStore.ts
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import api from '../api';
-import { toast } from 'sonner';
+import api from '../api'; // Import người bồi bàn vừa tạo
+import { toast } from 'sonner'; // Để hiện thông báo đẹp
 
+// Định nghĩa kiểu dữ liệu User giống Backend trả về
 type User = {
   id: string;
   email: string;
@@ -15,7 +16,9 @@ type User = {
 
 type AuthState = {
   user: User | null;
-  accessToken: string | null;
+  accessToken: string | null; // Cần thêm cái này để lưu chìa khóa
+  
+  // Hàm login giờ sẽ trả về Promise (vì cần chờ mạng)
   login: (email: string, password: string) => Promise<void>; 
   logout: () => void;
 };
@@ -51,9 +54,10 @@ export const useAuthStore = create(
 
           toast.success("Đăng nhập thành công!");
         } catch (error: any) {
+          // Xử lý lỗi nếu sai pass hoặc server chết
           const msg = error.response?.data?.message || "Đăng nhập thất bại";
           toast.error(msg);
-          throw error;
+          throw error; // Ném lỗi để UI (trang Login) biết mà dừng loading
         }
       },
 
@@ -64,7 +68,7 @@ export const useAuthStore = create(
       },
     }),
     {
-      name: 'auth-storage',
+      name: 'auth-storage', // Tên key trong LocalStorage
       storage: createJSONStorage(() => localStorage),
     }
   )

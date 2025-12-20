@@ -3,7 +3,7 @@ import { AuthRequest } from "../middlewares/authMiddleware";
 import { NLPService } from "../services/nlpService";
 import { NLPActionHandler } from "../services/actionHandler";
 import { ChatMessage } from "../models/chatMessage";
-import { logDebug, logError } from "../utils/logger";
+import { logDebug, logError } from "../../shared/logger";
 import { ok, error } from "../utils/apiResponse";
 // [UPDATE 1] Import thêm hàm mapIntentName từ shared/type
 import { toVNEntities, DetectedIntent, VNIntentName, mapIntentName } from "../../shared/type";
@@ -15,32 +15,22 @@ export const handleChatMessage = async (req: AuthRequest, res: Response) => {
 
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
     if (!message) return error(res, null, "Message is required");
-
-    // B1: Lưu User Message
     await ChatMessage.create({ user: userId, role: "user", content: message });
 
-    // B2: Gọi NLP (Brain)
-    // Lấy intent thô từ NLP (VD: "create_event")
     const rawIntentName = await NLPService.detectIntent(message);
     
-    // [UPDATE 2] Gọi hàm map để chuẩn hóa tên Intent ngay lập tức
     // create_event -> add_event
     // create_exercise -> create_task
     const intentName = mapIntentName(rawIntentName);
 
-    // Xử lý Entities
+    // handle Entities
     const rawEntities = NLPService.extractEntities(message);
     const entities = toVNEntities(rawEntities);
     entities.userId = userId;
 
-    logDebug(`[Chat] Raw Intent: ${rawIntentName} -> Mapped: ${intentName}`, entities);
-
-    // B3: Xử lý Hành động (Hands)
     let actionResult = null;
     let botReply = "";
     
-    // [UPDATE 3] Danh sách này chỉ cần chứa các intent đích (đã map) mà ActionHandler hỗ trợ
-    // (Bỏ 'create_event' thừa đi vì đã được map thành 'add_event' rồi)
     const ACTION_INTENTS = ["add_event", "create_task"];
 
     if (ACTION_INTENTS.includes(intentName)) {

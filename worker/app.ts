@@ -8,6 +8,7 @@ import morgan from "morgan";
 import path from "path";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 
 import authMiddleware from "./middlewares/authMiddleware";
 import errorHandler from "./middlewares/error";
@@ -21,6 +22,7 @@ import chatHistoryRouter from "./routes/chatHistory";
 import teacherRouter from "./routes/teacher";
 import remindRouter from "./routes/reminder";
 import chatRouter from "./routes/chat";
+import notificationRouter from "./routes/notification";
 //Configure env from file env
 dotenv.config();
 
@@ -31,16 +33,10 @@ export const createApp = async () => {
   const app = express();
   //Parsing request body
   app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
-  app.use(session({
-    secret: process.env.JWT_SECRET || "change-me",
-    resave: false,
-    saveUninitialized: false,
-    cookie: { httpOnly: true, secure: process.env.NODE_ENV === "production" }
-  }));
 
   app.use(express.json());
   app.use(bodyParser.urlencoded({ extended: true }));
-
+  app.use(cookieParser());
 
   // Createing and assigning a log file
   var accessLogStream = fs.createWriteStream(path.join(__dirname, "..", "access.log"), {
@@ -63,6 +59,7 @@ export const createApp = async () => {
   app.use("/api/teacher", teacherRouter);
   app.use("/api/remind", remindRouter);
   app.use("/api/chat", chatRouter);
+  app.use("/api/notifications", notificationRouter)
   app.get("/api/version", (req, res) => {
     res.json({
       version: process.env.API_VERSION,

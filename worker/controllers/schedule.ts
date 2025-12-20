@@ -3,7 +3,7 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Schedule } from "../models/schedule";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 import { populate } from "dotenv";
 import { Course } from "../models/course";
 import * as ReminderService from "../services/reminderService";

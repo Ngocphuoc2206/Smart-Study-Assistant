@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { DetectedIntent, IntentConfig, ReminderChannel, RootConfig } from "@/shared/type";
-import { logDebug, logError } from "../utils/logger";
+import { logDebug, logError } from "../../shared/logger";
 import { classifyIntentLLM } from "./llmIntentService";
 // Import chrono-node(#issue 8)
 import * as chrono from "chrono-node";

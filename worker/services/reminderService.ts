@@ -2,7 +2,7 @@
 import { NormalizedReminder, ReminderChannel, ReminderInput } from "@/shared/type";
 import { Schema, Types } from "mongoose";
 import { Reminder } from "../models/reminder";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 
 const normalizeChannel = (ch?: ReminderChannel): "Email" | "In-app" => {
     if (!ch) return "In-app";

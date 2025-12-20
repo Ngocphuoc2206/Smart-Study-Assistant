@@ -70,12 +70,17 @@ export const getAdminAnalytics = async (req: AuthRequest, res: Response) => {
 export const listUsers = async (req: AuthRequest, res: Response) => {
   logDebug("[Admin] Get List Users");
   const page = Math.max(parseInt(req.query.page as string) || 1, 1);
-  const limit = Math.max(parseInt(req.query.limit as string) || 10, 1);
+  const limit = Math.min(
+    Math.max(parseInt(req.query.limit as string) || 10, 1),
+    100
+  );
   const search = ((req.query.search as string) || "").trim();
   const filter = search
     ? {
         $or: [
           { name: { $regex: search, $options: "i" } },
+          { firstName: { $regex: search, $options: "i" } },
+          { lastName: { $regex: search, $options: "i" } },
           { email: { $regex: search, $options: "i" } },
         ],
       }
@@ -137,7 +142,10 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
 export const listNLPLogs = async (req: AuthRequest, res: Response) => {
   logDebug("[Admin] Getting List NLP Logs...");
   const page = Math.max(parseInt(req.query.page as string) || 1, 1);
-  const limit = Math.max(parseInt(req.query.limit as string) || 10, 1);
+  const limit = Math.min(
+    Math.max(parseInt(req.query.limit as string) || 10, 1),
+    100
+  );
   const search = ((req.query.search as string) || "").trim();
 
   const filter = search

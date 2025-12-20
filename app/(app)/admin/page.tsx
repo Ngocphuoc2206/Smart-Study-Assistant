@@ -7,8 +7,8 @@ import { useAdminAnalytics } from "@/lib/hooks/useAdminAnalytics";
 import { Users, BookOpen, MessageSquare, Activity } from "lucide-react";
 
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -101,18 +101,13 @@ export default function AdminDashboard() {
               <div className="text-sm text-muted-foreground">Đang tải...</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.activity}>
+                <AreaChart data={analytics.activity}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                   <YAxis />
                   <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="messages"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
+                  <Area type="monotone" dataKey="messages" />
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </CardContent>

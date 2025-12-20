@@ -88,6 +88,7 @@ export const getCourses = async (req: any, res: Response) => {
 
     const courses = await Course.find(query)
       .populate({ path: "teacher", select: "firstName lastName email" })
+      .populate({ path: "students", select: "_id firstName lastName email avatarUrl" })
       .sort({ createdAt: -1 });
 
     return res.status(200).json({

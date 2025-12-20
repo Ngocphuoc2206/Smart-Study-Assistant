@@ -53,7 +53,7 @@ export const useNotificationMutations = () => {
       duration: "hour" | "day";
     }) => {
       await api.patch(`/notifications/${id}/snooze`, { duration });
-      toast.info(`Đã dời lịch nhắc nhở (Giả lập)`);
+      toast.info(`Đã dời lịch nhắc nhở`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });

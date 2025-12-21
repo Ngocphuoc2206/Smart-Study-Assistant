@@ -47,6 +47,8 @@ export const useCreateEventMutation = () => {
     onSuccess: () => {
       toast.success("Đã tạo sự kiện và cài đặt nhắc nhở!");
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      // Refresh reminders cache so FE can pick up newly created reminder docs
+      queryClient.invalidateQueries({ queryKey: ['reminders'] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
     onError: (err: any) => {
@@ -89,6 +91,7 @@ export const useUpdateEventMutation = () => {
         onSuccess: () => {
             toast.success("Đã cập nhật sự kiện");
             queryClient.invalidateQueries({ queryKey: ['events'] });
+            queryClient.invalidateQueries({ queryKey: ['reminders'] });
             queryClient.invalidateQueries({ queryKey: ['courses'] });
         },
         onError: (err: any) => {
@@ -107,6 +110,7 @@ export const useDeleteEventMutation = () => {
       onSuccess: () => {
         toast.success("Đã xóa sự kiện");
         queryClient.invalidateQueries({ queryKey: ['events'] });
+        queryClient.invalidateQueries({ queryKey: ['reminders'] });
         queryClient.invalidateQueries({ queryKey: ['courses'] });
       },
       onError: (err: any) => {

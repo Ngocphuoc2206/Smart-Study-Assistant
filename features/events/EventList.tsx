@@ -124,7 +124,7 @@ export default function EventList() {
       const myReminders = safeReminders.filter((r: any) => {
       
         const scheduleId = typeof r.schedule === 'string' ? r.schedule : r.schedule?._id;
-        return scheduleId === event.id;
+        return scheduleId?.toString() === event.id?.toString();//event
       });
 
       const mappedReminders = myReminders.map((r: any) => ({
@@ -134,7 +134,7 @@ export default function EventList() {
 
       return {
         ...event,
-        reminders: mappedReminders
+        reminders: mappedReminders.length > 0 ? mappedReminders : event.reminders,
       };
     });
   }, [data, allReminders]);

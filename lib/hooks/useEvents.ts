@@ -12,15 +12,21 @@ const mapScheduleToEvent = (item: any): StudyEvent => {
   const start = parseISO(item.startTime);
   const end = item.endTime ? parseISO(item.endTime) : null;
 
-  const courseInfo = (item.courseId && typeof item.courseId === 'object') ? {
-      id: item.courseId._id,
-      name: item.courseId.name,
-      color: item.courseId.color,
-      code: item.courseId.code
-  } : undefined;
+  const rawCourse = item.course || item.courseId;
+  let courseInfo = undefined;
+
+  // Kiểm tra nếu rawCourse tồn tại và là object (đã được populate)
+  if (rawCourse && typeof rawCourse === 'object') {
+      courseInfo = {
+          id: rawCourse._id || rawCourse.id,
+          name: rawCourse.name,
+          color: rawCourse.color,
+          code: rawCourse.code
+      };
+  }
 
   return {
-    id: item._id,
+    id: item._id || item.id,
     title: item.title,
     type: item.type,
     location: item.location,
@@ -28,8 +34,8 @@ const mapScheduleToEvent = (item: any): StudyEvent => {
     date: format(start, "yyyy-MM-dd"),
     timeStart: format(start, "HH:mm"),
     timeEnd: end ? format(end, "HH:mm") : undefined,
-    course: courseInfo as Course, // Lấy trực tiếp từ populate, KHÔNG CẦN gọi API courses nữa
-    reminders: [] 
+    course: courseInfo as Course, 
+    reminders: item.reminders || [] 
   };
 };
 

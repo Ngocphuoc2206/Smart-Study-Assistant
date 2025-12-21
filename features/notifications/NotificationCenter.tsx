@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // features/notifications/NotificationCenter.tsx
 "use client";
 
-import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,9 @@ import {
   useNotificationMutations,
   NotificationItem,
 } from "@/lib/hooks/useNotifications";
+import { useEffect } from "react";
+import { getSocket } from "@/lib/socket";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   Bell,
@@ -24,10 +27,33 @@ import {
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
+import { useAuthStore } from "@/lib/hooks/useAuthStore";
 
 export default function NotificationCenter() {
   const { data, isLoading, isError } = useNotifications();
   const { markAsReadMutation, snoozeMutation } = useNotificationMutations();
+  const { user } = useAuthStore.getState();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const userId = user?.id;
+    if (!userId) return;
+    const socket = getSocket();
+    socket.emit("auth", { userId });
+    const handler = (payload: any) => {
+      queryClient.setQueryData(["notifications"], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          sent: [payload, ...old.sent],
+        };
+      });
+    };
+    socket.on("notification", handler);
+    return () => {
+      socket.off("notification", handler);
+    };
+  });
 
   const renderList = (
     items: NotificationItem[] | undefined,
@@ -74,7 +100,6 @@ export default function NotificationCenter() {
             onSnooze={(duration) =>
               snoozeMutation.mutate({ id: notif.id, duration })
             }
-            void={undefined}
           />
         ))}
       </ul>

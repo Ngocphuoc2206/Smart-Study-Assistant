@@ -6,6 +6,7 @@ import { Providers } from "@/components/providers"; // Import
 import { cn } from "@/lib/utils";
 
 import { Toaster } from "@/components/ui/sonner";
+import SocketProvider from "@/components/providers/SocketProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -27,13 +28,11 @@ export default function RootLayout({
           inter.variable
         )}
       >
-        {/* Bọc children bằng Providers */}
-       <Providers>
-          {children}
-          <Toaster richColors /> {/* Thêm vào đây */}
+        <Providers>
+          <SocketProvider>{children}</SocketProvider>
+          <Toaster richColors />
         </Providers>
       </body>
     </html>
   );
 }
-

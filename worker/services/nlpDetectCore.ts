@@ -118,7 +118,11 @@ export async function detectIntentCore(args: {
 }): Promise<DetectCoreResult> {
   const { text, userId, pendingIntent, pendingEntities, selectedChannel } =
     args;
-  logDebug("[NLP] detectIntentCore", text);
+  logDebug(
+    `[NLP] detectIntentCore {text: ${text}}, {pendingIntent: ${pendingIntent}}, {pendingEntities: ${JSON.stringify(
+      pendingEntities
+    )}}, {selectedChannel: ${selectedChannel}}`
+  );
   //Reply chatbot natural
   const smallTalk = detectSmallTalk(text);
   if (smallTalk) {
@@ -167,6 +171,8 @@ export async function detectIntentCore(args: {
     name,
     entities,
   };
+
+  logDebug("[NLP] Detected Intent: ", detected);
   //If missing field reply from chatbot
   if (detected.name === "create_task" || detected.name === "add_event") {
     const missing = missingRequiredFields(detected.name, detected.entities);

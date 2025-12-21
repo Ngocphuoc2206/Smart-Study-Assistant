@@ -379,12 +379,12 @@ export const NLPService = {
       const parsedDates = chrono.parse(translatedText);
 
       let cleanText = text;
-
+      logDebug("[NLPService] Parsed Dates:", parsedDates);
       if (parsedDates.length > 0) {
         const dateResult = parsedDates[0];
         //(issue #8)fix timezone to GMT+7
         const rawDate = dateResult.start.date();
-
+        logDebug("[NLPService] Raw Date:", rawDate);
         const GMT7_OFFSET = 7 * 60 * 60 * 1000;
         const fixedDate = new Date(rawDate.getTime() + GMT7_OFFSET);
 
@@ -425,7 +425,7 @@ export const NLPService = {
           "tối",
           "ngày",
           "tháng",
-          "mai", // thêm mai vào đây để xóa khỏi title
+          "mai",
         ];
 
         timeKeywords.forEach((k) => {
@@ -436,20 +436,27 @@ export const NLPService = {
       }
 
       // Bước 2: Handling Reminders
-      const reminderRegex = /nhắc (?:trước|lại) (\d+) (phút|giờ|tiếng|ngày)/i;
-      const reminderMatch = text.match(reminderRegex);
+      const reminderRegex =
+        /nhắc\s*(?:trước|lai|lại)(?:\s+\w+){0,3}\s*(\d+)\s*(phút|giờ|gio|tiếng|tieng|ngày|ngay)/i;
 
-      if (reminderMatch) {
-        const amount = parseInt(reminderMatch[1]);
-        const unit = reminderMatch[2].toLowerCase();
+      const reminderMatch2 = cleanText.match(reminderRegex);
+      if (reminderMatch2) {
+        const amount = parseInt(reminderMatch2[1], 10);
+        const unit = reminderMatch2[2].toLowerCase();
         let seconds = 0;
-        if (unit.includes("phút")) seconds = amount * 60;
-        else if (unit.includes("giờ") || unit.includes("tiếng"))
-          seconds = amount * 3600;
-        else if (unit.includes("ngày")) seconds = amount * 86400;
 
-        entities.reminderOffset = -seconds;
-        cleanText = cleanText.replace(reminderMatch[0], "");
+        if (unit.includes("phút")) seconds = amount * 60;
+        else if (
+          unit.includes("giờ") ||
+          unit.includes("gio") ||
+          unit.includes("tiếng") ||
+          unit.includes("tieng")
+        )
+          seconds = amount * 3600;
+        else seconds = amount * 86400;
+
+        entities.reminderOffset = seconds; // ✅ dương
+        cleanText = cleanText.replace(reminderMatch2[0], " ");
       }
 
       // 3. Xử lý Môn học(issue #23)
@@ -504,42 +511,88 @@ export const NLPService = {
         "thêm",
         "tạo",
         "đặt lịch",
-        "nhắc tôi",
-        "có",
-        "lịch",
-        "bài tập",
-        "thi",
-        "deadline",
-        "vào",
-        "họp",
-        "cuộc họp",
-        "sự kiện",
         "lên lịch",
+        "nhắc tôi",
+        "nhắc mình",
+        "nhắc",
+        "schedule",
+        "add",
+        "create",
+        "set",
       ];
 
-      // Remove extra spaces left by replace
       cleanText = cleanText.replace(/\s+/g, " ").trim();
 
+      // remove action keywords only at start
       let foundKeyword = true;
       while (foundKeyword) {
         foundKeyword = false;
         for (const kw of actionKeywords) {
-          // Use startsWith in combination with regex to make sure it's the first word of the sentence
           if (new RegExp(`^${kw}\\b`, "i").test(cleanText)) {
             cleanText = cleanText
-              .replace(new RegExp(`^${kw}\\b`, "i"), "")
+              .replace(new RegExp(`^${kw}\\b`, "i"), " ")
               .trim();
             foundKeyword = true;
           }
         }
       }
 
-      cleanText = cleanText.replace(/[.,!?;:]/g, "").trim();
+      // remove reminder phrase tail
+      cleanText = cleanText
+        .replace(/\bnhắc\s*(?:trước|lai|lại)\b[\s\S]*$/i, " ")
+        .replace(/\bnhac\s*(?:truoc|lai)\b[\s\S]*$/i, " ")
+        .trim();
+
+      // remove weekday phrases like "thứ 2 tuần sau"
+      cleanText = cleanText.replace(
+        /\b(thứ\s*[2-7]|chu\s*nhật|chủ\s*nhật)\b(\s+(tuần\s*(sau|tới)|tuần\s*này))?/gi,
+        " "
+      );
+
+      // remove leftover time/date tokens
+      cleanText = cleanText.replace(
+        /\b(vào|vao|lúc|luc|ngày|ngay|tuần|sau|tới|sáng|chiều|tối|hôm nay|ngày mai|ngày kia|mốt)\b/gi,
+        " "
+      );
+
+      // remove punctuation
+      cleanText = cleanText.replace(/[.,!?;:]/g, " ");
+
+      // remove stopwords
+      const stopwords = [
+        "tôi",
+        "mình",
+        "em",
+        "anh",
+        "chị",
+        "bạn",
+        "cần",
+        "muốn",
+        "nhờ",
+        "giúp",
+        "giup",
+        "hãy",
+        "với",
+        "nhé",
+        "nhe",
+        "ạ",
+        "a",
+        "đi",
+        "dùm",
+        "dum",
+      ];
+
+      for (const s of stopwords) {
+        const r = new RegExp(`\\b${s.replace(/\s+/g, "\\s+")}\\b`, "gi");
+        cleanText = cleanText.replace(r, " ");
+      }
+
+      cleanText = cleanText.replace(/\s+/g, " ").trim();
 
       if (cleanText.length > 0) {
         entities.title = cleanText.charAt(0).toUpperCase() + cleanText.slice(1);
       } else {
-        entities.title = "Sự kiện mới";
+        entities.title = entities.type === "exam" ? "Kỳ thi" : "Sự kiện mới";
       }
 
       logDebug("[NLPService] Extracted Entities:", entities);

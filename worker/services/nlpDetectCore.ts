@@ -144,6 +144,7 @@ export async function detectIntentCore(args: {
       ...pendingEntities,
       remindChannel: selectedChannel,
     };
+    logDebug("[NLPDETECTCORE] Merged: ", merged);
     return {
       kind: "execute",
       intent: pendingIntent as VNIntentName,

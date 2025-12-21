@@ -130,7 +130,7 @@ export function generateResponse(intent: DetectedIntent): string {
       const location = entities?.location
         ? ` tại **${entities.location}**`
         : "";
-      const remind = remindersToText(entities?.reminder);
+      const remind = remindersToText(entities?.reminder as number[]);
 
       const line1 = `Đã ghi nhận ${title}${course} vào **${date}${
         time ? " " + time : ""
@@ -415,16 +415,39 @@ export const NLPService = {
 
       let cleanText = text;
       logDebug("[NLPService] Parsed Dates:", parsedDates);
+      //Handling Reminders
+      const reminderRegex =
+        /nhắc\s*(?:trước|lai|lại)(?:\s+\w+){0,3}\s*(\d+)\s*(phút|giờ|gio|tiếng|tieng|ngày|ngay)/i;
+
+      const reminderMatch2 = cleanText.match(reminderRegex);
+      if (reminderMatch2) {
+        const amount = parseInt(reminderMatch2[1], 10);
+        const unit = reminderMatch2[2].toLowerCase();
+        let seconds = 0;
+
+        if (unit.includes("phút")) seconds = amount * 60;
+        else if (
+          unit.includes("giờ") ||
+          unit.includes("gio") ||
+          unit.includes("tiếng") ||
+          unit.includes("tieng")
+        )
+          seconds = amount * 3600;
+        else seconds = amount * 86400;
+
+        entities.reminderOffset = -seconds;
+        cleanText = cleanText.replace(reminderMatch2[0], " ");
+      }
       if (parsedDates.length > 0) {
         const dateResult = parsedDates[0];
-        //(issue #8)fix timezone to GMT+7
+        //Timezone to GMT+7
         const rawDate = dateResult.start.date();
         logDebug("[NLPService] Raw Date:", rawDate);
         const GMT7_OFFSET = 7 * 60 * 60 * 1000;
         const fixedDate = new Date(rawDate.getTime() + GMT7_OFFSET);
 
         entities.datetime = fixedDate;
-        //1. Remove specific time clusters (9am, 9:30am, 10am) using Regex first
+        //Remove specific time clusters (9am, 9:30am, 10am) using Regex first
         cleanText = cleanText.replace(
           /\b\d{1,2}\s*(?:h|giờ|:)\s*(?:\d{2})?\b/gi,
           ""
@@ -434,7 +457,7 @@ export const NLPService = {
           ""
         );
 
-        // 2. Remove time keywords using Boundary (\b)
+        //Remove time keywords using Boundary (\b)
         const timeKeywords = [
           "hôm nay",
           "ngày mai",
@@ -468,30 +491,6 @@ export const NLPService = {
           const reg = new RegExp(`\\b${k}\\b`, "gi");
           cleanText = cleanText.replace(reg, " ");
         });
-      }
-
-      // Bước 2: Handling Reminders
-      const reminderRegex =
-        /nhắc\s*(?:trước|lai|lại)(?:\s+\w+){0,3}\s*(\d+)\s*(phút|giờ|gio|tiếng|tieng|ngày|ngay)/i;
-
-      const reminderMatch2 = cleanText.match(reminderRegex);
-      if (reminderMatch2) {
-        const amount = parseInt(reminderMatch2[1], 10);
-        const unit = reminderMatch2[2].toLowerCase();
-        let seconds = 0;
-
-        if (unit.includes("phút")) seconds = amount * 60;
-        else if (
-          unit.includes("giờ") ||
-          unit.includes("gio") ||
-          unit.includes("tiếng") ||
-          unit.includes("tieng")
-        )
-          seconds = amount * 3600;
-        else seconds = amount * 86400;
-
-        entities.reminderOffset = seconds; // ✅ dương
-        cleanText = cleanText.replace(reminderMatch2[0], " ");
       }
 
       // 3. Xử lý Môn học(issue #23)

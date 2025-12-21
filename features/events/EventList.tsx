@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // features/events/EventList.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { EventFilters, useInfiniteEvents } from "@/lib/hooks/useEvents";
+import { useReminders } from "@/lib/hooks/useReminders";
 import { EventCard } from "./EventCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +72,8 @@ export default function EventList() {
     isFetchingNextPage,
   } = useInfiniteEvents(filters);
 
+  const { data: allReminders } = useReminders();
+
   // --- State cho Modals (Yêu cầu 2: Sửa/Xóa) ---
   const [selectedEvent, setSelectedEvent] = useState<StudyEvent | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -104,9 +108,36 @@ export default function EventList() {
           ...event,
           // Chuyển '2025-10-25' (string) sang Date object
           date: parseISO(event.date), 
+          notes: event.notes,
           reminders: event.reminders || []
       };
   };
+
+  const eventsWithReminders = useMemo(() => {
+    const rawEvents = data?.pages.flatMap(page => page.data) || [];
+
+    
+    const safeReminders = Array.isArray(allReminders) ? allReminders : [];
+
+    return rawEvents.map(event => {
+  
+      const myReminders = safeReminders.filter((r: any) => {
+      
+        const scheduleId = typeof r.schedule === 'string' ? r.schedule : r.schedule?._id;
+        return scheduleId?.toString() === event.id?.toString();//event
+      });
+
+      const mappedReminders = myReminders.map((r: any) => ({
+         offsetSec: (new Date(r.remindAt).getTime() - new Date(`${event.date}T${event.timeStart}`).getTime()) / 1000,
+         channel: r.channel === 'In-app' ? 'inapp' : 'email'
+      }));
+
+      return {
+        ...event,
+        reminders: mappedReminders.length > 0 ? mappedReminders : event.reminders,
+      };
+    });
+  }, [data, allReminders]);
 
   // --- Render Nội dung ---
   const renderContent = () => {
@@ -130,7 +161,7 @@ export default function EventList() {
       );
     }
     
-    const allEvents = data?.pages.flatMap(page => page.data) || [];
+    const allEvents = eventsWithReminders;
 
     // 3. Trống (Yêu cầu 3)
     if (allEvents.length === 0) {

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Task } from "../models/task";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 import * as ReminderService from "../services/reminderService";
 
 // POST /task

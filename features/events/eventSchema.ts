@@ -23,7 +23,7 @@ export const eventFormSchema = z.object({
   }).optional().or(z.literal('')), // Cho phép rỗng
   
   location: z.string().optional(),
-  
+  notes: z.string().max(1000, "Ghi chú không được quá 1000 ký tự").optional(),
   reminders: z.array(z.object({
     offsetSec: z.number(),
   channel: z.enum(['inapp', 'email', 'webpush'] as const),

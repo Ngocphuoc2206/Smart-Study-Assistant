@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const log = (...args: any) => {
     console.log("[LOG]", ...args);
 }

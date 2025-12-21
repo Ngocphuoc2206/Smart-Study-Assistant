@@ -3,10 +3,11 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Schedule } from "../models/schedule";
-import { logDebug } from "../utils/logger";
+import { logDebug } from "../../shared/logger";
 import { populate } from "dotenv";
 import { Course } from "../models/course";
 import * as ReminderService from "../services/reminderService";
+import { Types } from "mongoose";
 
 //Post /schedules
 export const createSchedule = async (req: AuthRequest, res: Response) => {
@@ -84,7 +85,22 @@ export const getSchedule = async (req: AuthRequest, res: Response) => {
         const { from, to } = req.query;
         const userId = req.user?.userId;
 
-        let query: any = { user: userId };
+        // By default include schedules owned by the user
+        // Also include schedules that belong to courses the user is a member of (student) or teaches (teacher)
+        // This lets students see events created by teachers for their courses.
+        const courseDocs = await Course.find({
+            $or: [
+                { teacher: userId },
+                { students: new Types.ObjectId(userId) }
+            ]
+        }).select('_id').lean();
+
+        const courseIds = courseDocs.map((d: any) => d._id);
+
+        const query: any = { $or: [{ user: userId }] };
+        if (courseIds.length > 0) {
+            query.$or.push({ course: { $in: courseIds } });
+        }
 
         if (from && to) {
             query.startTime = {

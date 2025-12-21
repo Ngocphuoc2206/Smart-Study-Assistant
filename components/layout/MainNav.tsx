@@ -1,25 +1,26 @@
+// Smart-Study-Assistant/components/layout/MainNav.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { useNotifications } from "@/lib/hooks/useNotifications"; 
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useAuthStore } from "@/lib/hooks/useAuthStore";
 
 // Định nghĩa các link và vai trò được phép
 const routes = [
   // == Student & Lecturer ==
-  { href: "/dashboard", label: "Dashboard", roles: ["student", "lecturer"] },
-  { href: "/events", label: "Sự kiện", roles: ["student", "lecturer"] }, // Lịch học, Bài tập
-  { href: "/notifications", label: "Thông báo", roles: ["student", "lecturer"] },
-  
+  { href: "/dashboard", label: "Dashboard", roles: ["student", "teacher"] },
+  { href: "/events", label: "Sự kiện", roles: ["student", "teacher"] }, // Lịch học, Bài tập
+  { href: "/notifications", label: "Thông báo", roles: ["student", "teacher"] },
+
   // == Lecturer Only ==
-  { href: "/courses", label: "Môn học", roles: ["lecturer"] }, 
-  { href: "/events/new", label: "Thêm sự kiện", roles: ["lecturer"] },
+  { href: "/courses", label: "Môn học", roles: ["teacher", "student"] },
+  { href: "/events/new", label: "Thêm sự kiện", roles: ["teacher"] },
   // ✨ SỬA Ở ĐÂY: Thay "Tạo khóa học" bằng "Danh sách sinh viên"
-  { href: "/students", label: "Danh sách sinh viên", roles: ["lecturer"] }, 
-  
+  { href: "/students", label: "Danh sách sinh viên", roles: ["teacher"] },
+
   // == ADMIN (Cập nhật mới) ==
   { href: "/admin", label: "Tổng quan", roles: ["admin"] },
   { href: "/admin/users", label: "Người dùng", roles: ["admin"] },
@@ -29,19 +30,19 @@ const routes = [
 
 interface MainNavProps {
   className?: string;
-  onLinkClick?: () => void; 
+  onLinkClick?: () => void;
 }
 
 export function MainNav({ className, onLinkClick }: MainNavProps) {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
-  const userRole = user?.role || 'student';
+  const userRole = user?.role || "student";
 
   const { data: notificationData } = useNotifications();
-  const upcomingCount = notificationData?.upcoming.length || 0;
+  const upcomingCount = notificationData?.upcoming?.length ?? 0;
 
   // Lọc danh sách link dựa trên vai trò
-  const accessibleRoutes = routes.filter(route => 
+  const accessibleRoutes = routes.filter((route) =>
     route.roles.includes(userRole)
   );
 
@@ -55,17 +56,19 @@ export function MainNav({ className, onLinkClick }: MainNavProps) {
           onClick={onLinkClick}
           className={cn(
             "text-lg md:text-sm font-medium transition-colors hover:text-primary",
-            pathname === route.href
-              ? "text-primary"
-              : "text-muted-foreground"
+            pathname === route.href ? "text-primary" : "text-muted-foreground"
           )}
         >
           <div className="flex items-center gap-2">
             {route.label}
             {/* Badge chỉ hiện cho SV/GV ở mục Thông báo */}
-            {route.href === "/notifications" && upcomingCount > 0 && ["student", "teacher"].includes(userRole) && (
-              <Badge className="h-5 w-5 p-0 flex items-center justify-center">{upcomingCount}</Badge>
-            )}
+            {route.href === "/notifications" &&
+              upcomingCount > 0 &&
+              ["student", "teacher"].includes(userRole) && (
+                <Badge className="h-5 w-5 p-0 flex items-center justify-center">
+                  {upcomingCount}
+                </Badge>
+              )}
           </div>
         </Link>
       ))}

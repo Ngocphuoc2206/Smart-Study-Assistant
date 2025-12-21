@@ -1,28 +1,27 @@
-// components/providers/AuthProvider.tsx
 "use client";
 
-import { useAuthStore } from "@/lib/hooks/useAuthStore";
-import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuthStore } from "@/lib/hooks/useAuthStore";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
-  
-  // Lấy trạng thái từ 'persist' (localStorage)
-  const isHydrated = useAuthStore.persist.hasHydrated();
+  const user = useAuthStore((s) => s.user);
+  const bootstrapped = useAuthStore((s) => s.bootstrapped);
+  const bootstrap = useAuthStore((s) => s.bootstrap);
 
   useEffect(() => {
-    // Chỉ chạy sau khi đã lấy dữ liệu từ localStorage
-    if (isHydrated && !user) {
-      // Nếu chưa đăng nhập, đá về trang /login
+    bootstrap();
+  }, [bootstrap]);
+
+  useEffect(() => {
+    if (bootstrapped && !user) {
       router.replace("/login");
     }
-  }, [isHydrated, user, router]);
+  }, [bootstrapped, user, router]);
 
-  // 1. Nếu chưa lấy xong localStorage, hiện màn hình chờ
-  if (!isHydrated) {
+  if (!bootstrapped) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Skeleton className="h-20 w-20 rounded-full" />
@@ -30,11 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 2. Nếu đã lấy xong VÀ có user, cho phép vào
-  if (isHydrated && user) {
-    return <>{children}</>;
-  }
+  if (bootstrapped && user) return <>{children}</>;
 
-  // 3. Nếu đã lấy xong và KO có user (đang bị đá về /login)
-  return null; 
+  return null;
 }

@@ -3,9 +3,10 @@ import { Request, Response, NextFunction } from "express";
 import { verifyAccessToken } from "../utils/jwt";
 
 const EXCEPT_PATHS = [
-  "/api/auth/login", 
+  "/api/auth/login",
   "/api/auth/register",
-  "/api/auth/me",
+  "/api/auth/refresh",
+  "/api/auth/logout",
   "/api/nlp/detect-intent",
 ];
 
@@ -15,15 +16,21 @@ export interface AuthRequest extends Request {
   };
 }
 
-const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+const authMiddleware = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
   console.log("PATH:", req.path, "ORIGINAL:", req.originalUrl);
   if (EXCEPT_PATHS.includes(req.path)) {
     return next();
   }
 
   // Dev bypass: allow anonymous in dev when env set
-  if (process.env.ALLOW_ANONYMOUS === 'true') {
-    req.user = { userId: process.env.ANON_USER_ID || '000000000000000000000000' };
+  if (process.env.ALLOW_ANONYMOUS === "true") {
+    req.user = {
+      userId: process.env.ANON_USER_ID || "000000000000000000000000",
+    };
     return next();
   }
 
@@ -50,7 +57,6 @@ const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunctio
     console.log("401 FROM AUTH MIDDLEWARE: token not valid", error);
     return res.status(401).json({ success: false, message: "Token not valid" });
   }
-
-}
+};
 
 export default authMiddleware;

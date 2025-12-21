@@ -54,6 +54,41 @@ function formatDate(d?: string) {
   return `${day}/${month}/${year}`;
 }
 
+function buildTitleFromTypeAndCourse(args: {
+  type?: "exam" | "lecture" | "other" | "assignment";
+  course?: string | null;
+  fallback?: string;
+}) {
+  const type = args.type || "other";
+  const course = (args.course || "").trim();
+  const fallback = (args.fallback || "").trim();
+
+  const cap = (s: string) =>
+    s
+      .replace(/\s+/g, " ")
+      .trim()
+      .split(" ")
+      .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+      .join(" ");
+
+  if (course) {
+    const c = cap(course);
+    if (type === "exam") return `Kỳ thi ${c}`;
+    if (type === "assignment") return `Bài tập ${c}`;
+    if (type === "lecture") return `Lịch học ${c}`;
+    return `Sự kiện ${c}`;
+  }
+
+  // không có course => dùng fallback nếu có
+  if (fallback) return cap(fallback);
+
+  // fallback cuối cùng
+  if (type === "exam") return "Kỳ thi";
+  if (type === "assignment") return "Bài tập";
+  if (type === "lecture") return "Lịch học";
+  return "Sự kiện mới";
+}
+
 function remindersToText(rs?: number[]) {
   if (!rs || rs.length === 0) return "";
   const map: Record<number, string> = {
@@ -467,6 +502,12 @@ export const NLPService = {
       const courseMatch = text.match(courseRegex);
       if (courseMatch?.[1]) {
         entities.course = courseMatch[1].trim();
+        if (entities.course) {
+          entities.course = entities.course
+            .replace(/\s+/g, " ")
+            .replace(/[,.;:!?]+$/g, "")
+            .trim();
+        }
       }
 
       // Fallback: bắt theo cụm "kỳ thi/thi/kiểm tra ..."
@@ -587,13 +628,11 @@ export const NLPService = {
         cleanText = cleanText.replace(r, " ");
       }
 
-      cleanText = cleanText.replace(/\s+/g, " ").trim();
-
-      if (cleanText.length > 0) {
-        entities.title = cleanText.charAt(0).toUpperCase() + cleanText.slice(1);
-      } else {
-        entities.title = entities.type === "exam" ? "Kỳ thi" : "Sự kiện mới";
-      }
+      entities.title = buildTitleFromTypeAndCourse({
+        type: entities.type,
+        course: entities.course,
+        fallback: cleanText,
+      });
 
       logDebug("[NLPService] Extracted Entities:", entities);
       return entities;

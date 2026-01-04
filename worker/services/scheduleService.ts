@@ -8,8 +8,13 @@ import * as ReminderService from "../services/reminderService";
 export class ScheduleService {
   static async createFromNLP(entities: VNEntities) {
     if (!entities.userId) {
-      return { success: false, message: "Missing userId in NLP entities" };
+      return {
+        success: false,
+        code: "MISSING_USER",
+        message: "Missing userId",
+      };
     }
+
     try {
       const schedule = await Schedule.create({
         title: entities.title,
@@ -24,15 +29,20 @@ export class ScheduleService {
         reminders: entities.reminder,
         user: entities.userId,
       });
-      //Create reminder docs
-      if (schedule) {
-        const channel = entities.remindChannel || "In-app";
-        const reminder = entities.reminder;
-        if (!Array.isArray(reminder)) return;
-        const reminderInput = reminder.map((r) => ({
+
+      if (
+        schedule &&
+        Array.isArray(entities.reminder) &&
+        entities.reminder.length > 0 &&
+        entities.remindChannel
+      ) {
+        const channel = entities.remindChannel;
+
+        const reminderInput = entities.reminder.map((r) => ({
           offsetSec: r,
           channel,
         }));
+
         const reminderDocs = ReminderService.buildForSchedule({
           userId: entities.userId.toString(),
           scheduleId: schedule._id.toString(),
@@ -40,8 +50,10 @@ export class ScheduleService {
           startTime: schedule.startTime,
           reminders: reminderInput,
         });
+
         await ReminderService.createMany(reminderDocs as any[]);
       }
+
       return {
         success: true,
         created: schedule,
@@ -50,11 +62,21 @@ export class ScheduleService {
           startTime: schedule.startTime,
           location: schedule.location,
         },
+        message: "Đã tạo lịch thành công.",
       };
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.code === 11000) {
+        return {
+          success: false,
+          code: "DUPLICATE_SCHEDULE",
+          message: "Lịch này đã tồn tại (bị trùng).",
+        };
+      }
+
       return {
         success: false,
-        message: `Tạo lịch thất bại, ${error}`,
+        code: "SCHEDULE_CREATE_FAILED",
+        message: "Tạo lịch thất bại. Vui lòng thử lại.",
       };
     }
   }

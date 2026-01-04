@@ -22,10 +22,22 @@ function stablePick(text: string, options: string[]) {
 }
 
 function missingRequiredFields(intent: VNIntentName, entities: VNEntities) {
-  const required =
+  const baseRequired =
     intent === "create_task"
       ? ["title", "date"]
       : ["title", "date", "timeStart"];
+
+  const required = [...baseRequired];
+
+  const needChannel =
+    ((Array.isArray((entities as any)?.reminder) &&
+      (entities as any).reminder.length > 0) ||
+      (typeof (entities as any)?.reminderOffset === "number" &&
+        (entities as any).reminderOffset > 0)) &&
+    !entities.remindChannel;
+
+  if (needChannel) required.push("remindChannel");
+
   return required.filter((k) => !(entities as any)?.[k]);
 }
 
@@ -163,7 +175,7 @@ export async function detectIntentCore(args: {
       ? String((intentRaw as { intent?: unknown }).intent || "")
       : "";
 
-  const extracted = NLPService.extractEntities(text);
+  const extracted = await NLPService.extractEntities(text);
   const entities = toVNEntities(extracted);
 
   if (userId) entities.userId = userId;
@@ -181,8 +193,8 @@ export async function detectIntentCore(args: {
       const missingText = friendlyMissingText(missing);
       const example =
         detected.name === "create_task"
-          ? 'Ví dụ: "Tạo task nộp bài Toán 25/12"'
-          : 'Ví dụ: "Thêm lịch học Toán 25/12 09:00"';
+          ? 'Ví dụ: "Tạo task nộp bài Toán 25/12, nhắc nhở qua Email hoặc In-app"'
+          : 'Ví dụ: "Thêm lịch học Toán 25/12 09:00, nhắc nhở qua Email hoặc In-app"';
 
       return {
         kind: "follow_up",
@@ -199,35 +211,33 @@ export async function detectIntentCore(args: {
     }
   }
 
-  const needChannel =
-    Array.isArray(detected.entities?.reminder) &&
-    detected.entities.reminder.length > 0 &&
-    !detected.entities.remindChannel;
+  if (detected.name === "add_event" || detected.name === "create_task") {
+    const missing = missingRequiredFields(detected.name, detected.entities);
 
-  if (
-    needChannel &&
-    (detected.name === "create_task" || detected.name === "add_event")
-  ) {
-    const responseText =
-      "Bạn muốn tôi nhắc nhở ở đâu? **Email** hoặc **In-app**";
+    const hasReminder =
+      (Array.isArray((detected.entities as any)?.reminder) &&
+        (detected.entities as any).reminder.length > 0) ||
+      (typeof (detected.entities as any)?.reminderOffset === "number" &&
+        (detected.entities as any).reminderOffset !== 0);
+
+    const missingChannel = hasReminder && !detected.entities.remindChannel;
+
+    if (missing.length === 0 && !missingChannel) {
+      return {
+        kind: "execute",
+        intent: detected.name,
+        entities: detected.entities,
+        responseText:
+          detected.name === "add_event"
+            ? "Ok 👍 Mình sẽ tạo lịch cho bạn ngay."
+            : "Ok 👍 Mình sẽ tạo task cho bạn ngay.",
+      };
+    }
     return {
-      kind: "follow_up",
+      kind: "execute",
       intent: detected.name,
       entities: detected.entities,
-      responseText,
-      followUp: {
-        question: "Bạn muốn tôi nhắc nhở ở đâu?",
-        field: "remindChannel",
-        option: ["Email", "In-app"],
-      },
-      pendingIntent: detected.name,
-      pendingEntities: detected.entities,
+      responseText: NLPService.generateResponse(detected),
     };
   }
-  return {
-    kind: "execute",
-    intent: detected.name,
-    entities: detected.entities,
-    responseText: NLPService.generateResponse(detected),
-  };
 }

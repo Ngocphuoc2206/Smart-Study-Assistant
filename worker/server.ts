@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 4000;
   initSocket(server);
   //Call Cron Notification Start
   startNotificationCron();
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`[SERVER] Running at http://localhost:${PORT}`);
   });
 })();

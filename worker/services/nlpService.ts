@@ -38,6 +38,28 @@ function loadConfig() {
 }
 loadConfig();
 
+const VN_TZ = "Asia/Ho_Chi_Minh";
+
+function getVietnamRefDate() {
+  // tạo refDate theo giờ VN để chrono parse "next week" đúng theo VN
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utc + 7 * 60 * 60000);
+}
+
+function formatDateVN(d: Date) {
+  return d.toLocaleDateString("en-CA", { timeZone: VN_TZ }); // YYYY-MM-DD
+}
+
+function formatTimeVN(d: Date) {
+  return d.toLocaleTimeString("en-GB", {
+    timeZone: VN_TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }); // HH:mm
+}
+
 function formatTime(t?: string) {
   if (!t) return "";
   if (/^\d{1,2}h\d{0,2}$/.test(t)) {
@@ -411,18 +433,20 @@ export const NLPService = {
       const translatedText = mapVietnameseDateToEnglish(text);
       logDebug("[NLPService] Translated Text:", translatedText);
 
-      const parsedDates = chrono.parse(translatedText);
+      const refDate = getVietnamRefDate();
+      const parsedDates = chrono.parse(translatedText, refDate);
 
       let cleanText = text;
       logDebug("[NLPService] Parsed Dates:", parsedDates);
       //Handling Reminders
+      //Handling Reminders
       const reminderRegex =
-        /nhắc\s*(?:trước|lai|lại)(?:\s+\w+){0,3}\s*(\d+)\s*(phút|giờ|gio|tiếng|tieng|ngày|ngay)/i;
+        /\bnhắc(?:\s*nhở)?\b[^0-9]{0,40}?\b(?:trước|truoc)\b[^0-9]{0,20}?(\d+)\s*(phút|giờ|gio|tiếng|tieng|ngày|ngay)\b/iu;
 
-      const reminderMatch2 = cleanText.match(reminderRegex);
-      if (reminderMatch2) {
-        const amount = parseInt(reminderMatch2[1], 10);
-        const unit = reminderMatch2[2].toLowerCase();
+      const reminderMatch = cleanText.match(reminderRegex);
+      if (reminderMatch) {
+        const amount = parseInt(reminderMatch[1], 10);
+        const unit = reminderMatch[2].toLowerCase();
         let seconds = 0;
 
         if (unit.includes("phút")) seconds = amount * 60;
@@ -436,17 +460,53 @@ export const NLPService = {
         else seconds = amount * 86400;
 
         entities.reminderOffset = -seconds;
-        cleanText = cleanText.replace(reminderMatch2[0], " ");
+
+        // remove matched segment
+        cleanText = cleanText.replace(reminderMatch[0], " ");
       }
       if (parsedDates.length > 0) {
-        const dateResult = parsedDates[0];
-        //Timezone to GMT+7
-        const rawDate = dateResult.start.date();
-        logDebug("[NLPService] Raw Date:", rawDate);
-        const GMT7_OFFSET = 7 * 60 * 60 * 1000;
-        const fixedDate = new Date(rawDate.getTime() + GMT7_OFFSET);
+        let datePart: Date | null = null;
+        let timePart: Date | null = null;
 
-        entities.datetime = fixedDate;
+        for (const r of parsedDates) {
+          const d = r.start.date();
+          const txt = (r.text || "").toLowerCase();
+
+          if (
+            txt.includes("next week") ||
+            txt.includes("today") ||
+            txt.includes("tomorrow") ||
+            txt.includes("monday") ||
+            txt.includes("tuesday") ||
+            txt.includes("wednesday") ||
+            txt.includes("thursday") ||
+            txt.includes("friday") ||
+            txt.includes("saturday") ||
+            txt.includes("sunday")
+          ) {
+            datePart = d;
+          }
+
+          if (
+            txt.includes("at ") ||
+            txt.includes(":") ||
+            txt.includes("am") ||
+            txt.includes("pm")
+          ) {
+            timePart = d;
+          }
+        }
+
+        const base = datePart ?? timePart ?? refDate;
+
+        if (datePart && timePart) {
+          base.setHours(timePart.getHours(), timePart.getMinutes(), 0, 0);
+        }
+
+        entities.datetime = base;
+
+        logDebug("[NLPService] Raw Date (merged):", base);
+
         //Remove specific time clusters (9am, 9:30am, 10am) using Regex first
         cleanText = cleanText.replace(
           /\b\d{1,2}\s*(?:h|giờ|:)\s*(?:\d{2})?\b/gi,
@@ -492,9 +552,6 @@ export const NLPService = {
           cleanText = cleanText.replace(reg, " ");
         });
       }
-
-      // 3. Xử lý Môn học(issue #23)
-      // Bắt theo cụm "môn|lớp|học phần ..."
       const courseRegex =
         /(?:môn|lớp|học phần|nộp|bài tập|deadline)\s+([a-zA-ZđĐáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ\d\s]+?)(?=\s*(?:vào|lúc|ngày|mai|thứ|sáng|chiều|tối|$))/i;
 
@@ -509,7 +566,6 @@ export const NLPService = {
         }
       }
 
-      // Fallback: bắt theo cụm "kỳ thi/thi/kiểm tra ..."
       if (!entities.course) {
         const examCourseRegex =
           /(?:kỳ\s*thi|thi|kiểm\s*tra|test|exam)\s+([a-zA-ZđĐáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ\d\s]+?)(?=\s*(?:vào|lúc|ngày|mai|thứ|\d{1,2}[\/\-]\d{1,2}|sáng|chiều|tối|,|\.|$))/i;

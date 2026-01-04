@@ -106,10 +106,18 @@ export const handleChatMessage = async (req: AuthRequest, res: Response) => {
     );
 
     //Fallback
+    const msg = (actionResult?.message || "").toLowerCase();
+    const isBusinessError =
+      actionResult?.code === "DUPLICATE_SCHEDULE" ||
+      actionResult?.code === "DUPLICATE_TASK" ||
+      actionResult?.code === "MISSING_INFO" ||
+      msg.includes("đã tồn tại") ||
+      msg.includes("trùng") ||
+      msg.includes("thiếu thông tin");
+
     const shouldFallback =
-      !actionResult?.success ||
-      (typeof actionResult?.message === "string" &&
-        actionResult.message.toLowerCase().includes("không hỗ trợ"));
+      (actionResult?.success === false && !isBusinessError) ||
+      msg.includes("không hỗ trợ");
 
     const reply = shouldFallback
       ? await generateFallbackReply({

@@ -1,4 +1,21 @@
 import { ObjectId } from "mongoose";
+export type ActionCode =
+  | "DUPLICATE_SCHEDULE"
+  | "DUPLICATE_TASK"
+  | "MISSING_INFO"
+  | "SCHEDULE_CREATE_FAILED"
+  | "TASK_CREATE_FAILED"
+  | "UNSUPPORTED"
+  | "UNKNOWN";
+
+export type ActionResult<T> = {
+  success: boolean;
+  message?: string;
+  code?: ActionCode;
+  created?: T; // schedule/task created
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  preview?: any;
+};
 
 //#region Intent Detect
 export type IntentConfig = {
@@ -31,6 +48,7 @@ export type VNEntities = {
   timeStart?: string; // HH:mm
   timeEnd?: string;
   course?: string;
+  code?: string;
   courseName?: string;
   location?: string;
   reminder?: number[] | null;
@@ -62,12 +80,22 @@ export function mapIntentName(raw: string): VNIntentName {
   return "unknown";
 }
 
+const VN_TZ = "Asia/Ho_Chi_Minh";
+
 const pad2 = (n: number) => String(n).padStart(2, "0");
-//const toHHmm = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+
 const toHHmm = (d: Date) =>
-  `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
+  d.toLocaleTimeString("en-GB", {
+    timeZone: VN_TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
 const toYYYYMMDD = (d: Date) =>
-  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  d.toLocaleDateString("en-CA", {
+    timeZone: VN_TZ,
+  });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function toVNEntities(extracted: any): VNEntities {
@@ -92,7 +120,7 @@ export function toVNEntities(extracted: any): VNEntities {
     typeof extracted.reminderOffset === "number" &&
     extracted.reminderOffset !== 0
   ) {
-    out.reminder = [-Math.abs(extracted.reminderOffset)];
+    out.reminder = [extracted.reminderOffset];
   }
 
   return out;

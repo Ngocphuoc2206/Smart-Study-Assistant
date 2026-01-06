@@ -14,7 +14,7 @@ const REFRESH_COOKIE_NAME = "refreshToken";
 const refreshCookieOptions = {
   httpOnly: true,
   sameSite: "lax" as const,
-  secure: true,
+  secure: process.env.NODE_ENV === "production",
   path: "/",
   maxAge: 14 * 24 * 60 * 60 * 1000, //14 days
 };

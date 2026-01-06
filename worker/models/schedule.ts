@@ -76,4 +76,37 @@ const schedueSchema = new Schema<ISchedule>(
 
 schedueSchema.index({ user: 1, title: 1, startTime: 1 }, { unique: true });
 
-export const Schedule = model<ISchedule>("Schedule", schedueSchema);
+schedueSchema.pre('save', async function(next) {
+    const schedule = this as ISchedule;
+
+    // Chỉ kiểm tra nếu startTime hoặc endTime bị thay đổi
+    if (!schedule.isModified('startTime') && !schedule.isModified('endTime')) {
+        return next();
+    }
+
+    // Xử lý trường hợp không có endTime (mặc định cho là 1 tiếng nếu không có)
+    // Bạn nên bắt buộc có endTime để logic này chính xác nhất
+    const checkEndTime = schedule.endTime || new Date(schedule.startTime.getTime() + 60 * 60 * 1000);
+
+    const existingSchedule = await model('Schedule').findOne({
+        user: schedule.user, // Chỉ check trùng của chính user đó
+        _id: { $ne: schedule._id }, // Loại trừ chính nó (trường hợp đang update)
+        $or: [
+            // Logic trùng lặp:
+            // (StartMới < EndCũ) VÀ (EndMới > StartCũ)
+            {
+                startTime: { $lt: checkEndTime },
+                endTime: { $gt: schedule.startTime }
+            }
+        ]
+    });
+
+    if (existingSchedule) {
+        const err = new Error('Thời gian này đã bị trùng với một lịch trình khác!');
+        return next(err);
+    }
+
+    next();
+}); 
+
+export const Schedule = model<ISchedule>('Schedule', schedueSchema);

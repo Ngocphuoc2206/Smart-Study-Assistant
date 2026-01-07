@@ -36,6 +36,27 @@ export class ScheduleService {
         entities.reminder.length > 0 &&
         entities.remindChannel
       ) {
+        const startTime = new Date(
+          `${entities.date}T${entities.timeStart}:00+07:00`
+        );
+
+        if (isNaN(startTime.getTime())) {
+          return {
+            success: false,
+            code: "MISSING_INFO",
+            message: "INVALID_DATETIME",
+          };
+        }
+
+        const now = new Date();
+        if (startTime.getTime() < now.getTime()) {
+          return {
+            success: false,
+            code: "PAST_TIME",
+            message:
+              "Thời gian bạn nhập đã ở quá khứ. Bạn nhập lại giúp mình nhé.",
+          };
+        }
         const channel = entities.remindChannel;
 
         const reminderInput = entities.reminder.map((r) => ({

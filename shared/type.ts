@@ -63,6 +63,32 @@ export type DetectedIntent = {
   entities: VNEntities;
 };
 
+export type FollowUp = {
+  question: string;
+  field: string;
+  option?: Array<"Email" | "In-app">;
+};
+
+export type DetectCoreResult =
+  | {
+      kind: "follow_up";
+      intent: VNIntentName;
+      entities: VNEntities;
+      responseText: string;
+      followUp: FollowUp;
+      pendingIntent: VNIntentName;
+      pendingEntities: VNEntities;
+      shouldExecuteAction: false;
+    }
+  | {
+      kind: "execute";
+      intent: VNIntentName;
+      entities: VNEntities;
+      responseText: string;
+      directly?: boolean;
+      shouldExecuteAction: boolean;
+    };
+
 export function mapIntentName(raw: string): VNIntentName {
   const s = (raw || "").toLowerCase().trim().replace(/\s+/g, "_");
 

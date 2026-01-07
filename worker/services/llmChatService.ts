@@ -68,12 +68,9 @@ ${supported}
 
     const out = completion.choices?.[0]?.message?.content?.trim() || "";
     logDebug("[LLMCHAT] response", out);
-    return (
-      out ||
-      "Mình chưa hiểu rõ ý bạn. Bạn nói thêm giúp mình bạn muốn làm gì nhé?"
-    );
+    return out || "Bạn cần tôi giúp gì? (Ví dụ: Thêm bài tập AI thứ 6 này)";
   } catch (e) {
     logError("[LLMCHAT] error", e);
-    return "Mình chưa hiểu rõ ý bạn. Bạn nói thêm giúp mình bạn muốn làm gì nhé?";
+    return "Bạn cần tôi giúp gì? (Ví dụ: Thêm bài tập AI thứ 6 này)";
   }
 }

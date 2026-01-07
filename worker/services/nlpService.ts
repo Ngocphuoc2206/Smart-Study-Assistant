@@ -276,14 +276,13 @@ function normalizeText(raw: string): string {
   return text.trim();
 }
 
-// (#issue 8) Hàm dịch ngày tháng tiếng Việt sang Anh
 function mapVietnameseDateToEnglish(text: string): string {
   let t = text.toLowerCase();
 
-  // 1. Handling format date DD/MM
+  // Handling format date DD/MM
   t = t.replace(/ngày\s+(\d{1,2})[\/\-](\d{1,2})/g, "$2/$1");
 
-  // 2.Time keyword map
+  // Time keyword map
   const mapObj: Record<string, string> = {
     "hôm nay": "today",
     "ngày mai": "tomorrow",
@@ -309,7 +308,6 @@ function mapVietnameseDateToEnglish(text: string): string {
   };
 
   // Replace long keywords first
-  // Bug fix: use new RegExp with \b to capture exactly the word "mai" (not "khuyen dai")
   for (const key in mapObj) {
     const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     // \b matches word boundaries. For example, \bmai\b will match "mai" but not "pho cheese"
@@ -317,7 +315,7 @@ function mapVietnameseDateToEnglish(text: string): string {
     t = t.replace(reg, mapObj[key]);
   }
 
-  // 3. Hour handling: "9h", "9 giờ", "9 h" -> "9:00"
+  // Hour handling: "9h", "9 giờ", "9 h" -> "9:00"
   t = t.replace(/lúc/g, "at");
 
   // Case 1: 9h30 -> 9:30
@@ -325,11 +323,17 @@ function mapVietnameseDateToEnglish(text: string): string {
   // Case 2: 9h -> 9:00
   t = t.replace(/(\d+)\s*(?:h|giờ)/g, "$1:00");
 
-  // 4. Session handling
+  // Session handling: tránh tạo "14:00 pm"
   t = t
-    .replace(/\bchiều\b/g, "pm")
-    .replace(/\bsáng\b/g, "am")
-    .replace(/\btối\b/g, "pm");
+    .replace(/\bsáng\b/g, "__AM__")
+    .replace(/\bchiều\b/g, "__PM__")
+    .replace(/\btối\b/g, "__PM__");
+
+  // Nếu giờ >= 13 thì bỏ luôn AM/PM marker
+  t = t.replace(/(\b1[3-9]|2[0-3])(:\d{2})?\s*(__AM__|__PM__)\b/gi, "$1$2");
+
+  // Nếu giờ < 13 thì convert marker thành am/pm
+  t = t.replace(/__AM__/g, "am").replace(/__PM__/g, "pm");
 
   return t;
 }

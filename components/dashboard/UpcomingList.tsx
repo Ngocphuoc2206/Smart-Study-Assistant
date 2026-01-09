@@ -75,7 +75,7 @@ export function UpcomingList({ events, isLoading, isError }: UpcomingListProps) 
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <CalendarClock className="h-5 w-5" />
-          Sắp đến hạn
+          Tổng quan sự kiện
         </CardTitle>
       </CardHeader>
       <CardContent>{renderContent()}</CardContent>

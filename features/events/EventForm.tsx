@@ -319,7 +319,7 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
         />
         
         {/* Nhắc nhở */}
-        <FormField
+        {/*<FormField
           control={form.control}
           name="reminders"
           render={({ field }) => (
@@ -333,7 +333,7 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
               <FormMessage />
             </FormItem>
           )}
-        />
+        />*/}
 
         <Button 
           type="submit" 

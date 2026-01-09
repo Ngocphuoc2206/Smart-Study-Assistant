@@ -48,13 +48,45 @@ export const createSchedule = async (req: AuthRequest, res: Response) => {
     });
 
     if (existing) {
+      console.log("Duplicate Check: Đã có lịch y hệt trong DB:", { 
+          title: normalizedTitle, 
+          start: normalizedStartTime 
+      });
       return res.status(409).json({
         success: false,
         message: "Schedule already exists (duplicate).",
         data: existing,
       });
     }
+    // ------- KIỂM TRA TRÙNG LẶP THỜI GIAN ------
+    const checkStartTime = new Date(startTime);
+    const checkEndTime = endTime 
+      ? new Date(endTime) 
+      : new Date(checkStartTime.getTime() + 60 * 60 * 1000); // Mặc định 1 tiếng
 
+    // 2. Query tìm sự kiện bị trùng
+    const overlapSchedule = await Schedule.findOne({
+      user: req.user.userId,
+      startTime: { $lt: checkEndTime }, // Start của sự kiện cũ < End của sự kiện mới
+      endTime: { $gt: checkStartTime }, // End của sự kiện cũ > Start của sự kiện mới
+    });
+
+    if (overlapSchedule) {
+      // Format giờ để hiển thị thông báo lỗi đẹp hơn
+      const sTime = new Date(overlapSchedule.startTime);
+      const eTime = overlapSchedule.endTime ? new Date(overlapSchedule.endTime) : null;
+      const timeString = `${sTime.getHours()}:${sTime.getMinutes().toString().padStart(2, '0')}` + 
+                         (eTime ? ` - ${eTime.getHours()}:${eTime.getMinutes().toString().padStart(2, '0')}` : '');
+      console.log(`Overlap Check: Lịch mới đụng độ với lịch cũ ID: ${overlapSchedule._id}`);
+      console.log(`    -> Lịch cũ: "${overlapSchedule.title}" (${timeString})`);
+      return res.status(409).json({
+        success: false,
+        // Trả về message chi tiết để FE hiển thị
+        message: `Trùng thời gian với sự kiện: "${overlapSchedule.title}" (${timeString}).`,
+        conflictId: overlapSchedule._id
+      });
+    }
+    // -------
     const newSchedule = await Schedule.create({
       user: req.user.userId,
       course,
@@ -76,6 +108,7 @@ export const createSchedule = async (req: AuthRequest, res: Response) => {
       reminders,
     });
     await ReminderService.createMany(reminderDocs as any[]);
+    console.log(" [BE] Tạo lịch thành công:", newSchedule._id);
     logDebug("New schedule created: ", newSchedule);
 
     return res.status(201).json({
@@ -84,6 +117,7 @@ export const createSchedule = async (req: AuthRequest, res: Response) => {
       data: newSchedule,
     });
   } catch (err: any) {
+    console.error("[BE] Lỗi Exception:", err);
     if (err?.code === 11000) {
       return res.status(409).json({
         success: false,

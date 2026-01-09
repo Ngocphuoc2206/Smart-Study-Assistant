@@ -153,6 +153,7 @@ export const handleChatMessage = async (req: AuthRequest, res: Response) => {
       actionResult?.code === "DUPLICATE_SCHEDULE" ||
       actionResult?.code === "DUPLICATE_TASK" ||
       actionResult?.code === "MISSING_INFO" ||
+      actionResult?.code === "PAST_TIME" ||
       msg.includes("đã tồn tại") ||
       msg.includes("trùng") ||
       msg.includes("thiếu thông tin");

@@ -26,7 +26,34 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // 3. Create Course
+    // 3. Check duplicate name (same teacher)
+    const existingByName = await Course.findOne({
+      teacher: req.user.userId,
+      name: name.trim(),
+    });
+
+    if (existingByName) {
+      return res.status(409).json({
+        success: false,
+        message: `Bạn đã có khóa học có tên "${name}" rồi.`,
+      });
+    }
+
+    // 4. Check duplicate code (system-wide)
+    if (code && code.trim()) {
+      const existingByCode = await Course.findOne({
+        code: code.trim(),
+      });
+
+      if (existingByCode) {
+        return res.status(409).json({
+          success: false,
+          message: `Mã khóa học "${code}" đã tồn tại trong hệ thống.`,
+        });
+      }
+    }
+
+    // 5. Create Course
     const newCourse = await Course.create({
       teacher: req.user?.userId,
       name,
@@ -154,7 +181,39 @@ export const updateCourse = async (req: AuthRequest, res: Response) => {
 
     // 1. Get specific fields from body (Destructuring)
     const { name, code, description, color, students } = req.body;
+    const userId = req.user.userId; // Lấy userId để check trùng tên theo giáo viên
 
+    // 1. Kiểm tra trùng TÊN (Với các khóa học khác của cùng giáo viên này)
+    if (name !== undefined) {
+      const existingName = await Course.findOne({
+        teacher: userId,
+        name: name.trim(),
+        _id: { $ne: id }, // Quan trọng: Loại trừ chính khóa học đang sửa
+      });
+
+      if (existingName) {
+        return res.status(409).json({
+          success: false,
+          message: `Bạn đã có khóa học khác tên "${name}" rồi. Vui lòng chọn tên khác.`,
+        });
+      }
+    }
+
+    // 2. Kiểm tra trùng CODE (Trên toàn hệ thống)
+    if (code !== undefined && code.trim() !== "") {
+      const existingCode = await Course.findOne({
+        code: code.trim(),
+        _id: { $ne: id }, // Quan trọng: Loại trừ chính khóa học đang sửa
+      });
+
+      if (existingCode) {
+        return res.status(409).json({
+          success: false,
+          message: `Mã khóa học "${code}" đã tồn tại ở một khóa học khác.`,
+        });
+      }
+    }
+    
     // 2. Create a new object, ONLY put what is allowed to be edited in here
     const updateData: any = {};
 

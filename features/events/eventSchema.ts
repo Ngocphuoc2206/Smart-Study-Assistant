@@ -28,6 +28,25 @@ export const eventFormSchema = z.object({
     offsetSec: z.number(),
   channel: z.enum(['inapp', 'email', 'webpush'] as const),
   })).optional(),
-});
+}).refine(
+  (data) => {
+    // Nếu timeEnd rỗng hoặc không có thì bỏ qua kiểm tra
+    if (!data.timeEnd) return true;
+    
+    // Chuyển đổi thời gian sang số phút để so sánh
+    const [startHour, startMin] = data.timeStart.split(':').map(Number);
+    const [endHour, endMin] = data.timeEnd.split(':').map(Number);
+    
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+    
+    // Kiểm tra: giờ kết thúc phải lớn hơn giờ bắt đầu (không qua đêm)
+    return endMinutes > startMinutes;
+  },
+  {
+    message: "Giờ kết thúc phải lớn hơn giờ bắt đầu và phải cùng ngày (không được qua đêm).",
+    path: ["timeEnd"],
+  }
+);
 
 export type EventFormValues = z.infer<typeof eventFormSchema>;

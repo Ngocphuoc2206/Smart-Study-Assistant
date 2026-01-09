@@ -58,8 +58,10 @@ export const useCreateEventMutation = () => {
     },
     onError: (err: any) => {
       const status = err?.response?.status;
+      const serveMessage = err?.response?.data?.message;
+
       if (status === 409) {
-        toast.error("Lịch này đã tồn tại, không thể tạo trùng.");
+        toast.error(serveMessage || "Lịch này đã trùng thời gian với sự kiện khác!");
         return;
       }
       toast.error("Tạo sự kiện thất bại!");
@@ -107,7 +109,7 @@ export const useUpdateEventMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || "Lỗi cập nhật");
+      toast.error(err.response?.data?.message || "Lỗi cập nhật sự kiện");
     },
   });
 };

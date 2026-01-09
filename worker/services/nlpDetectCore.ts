@@ -16,6 +16,24 @@ function stablePick(text: string, options: string[]) {
   return options[h % options.length];
 }
 
+function toVNDate(date?: string, time?: string) {
+  if (!date || !time) return null;
+
+  const d = new Date(`${date}T${time}:00+07:00`);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function isPastTimeVN(date?: string, time?: string) {
+  const d = toVNDate(date, time);
+  if (!d) return false;
+
+  const now = new Date();
+  const nowVN = new Date(
+    now.toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" })
+  );
+  return d.getTime() < nowVN.getTime();
+}
+
 // validate giờ HH:mm
 function isValidHHmm(t?: string) {
   if (!t) return false;
@@ -175,7 +193,6 @@ export async function detectIntentCore(args: {
     } as any;
   }
 
-  //CONFIRM tạo lịch/task từ pendingEntities (quan trọng nhất)
   if (
     (pendingIntent === "add_event" || pendingIntent === "create_task") &&
     pendingEntities &&
@@ -333,6 +350,23 @@ export async function detectIntentCore(args: {
         pendingEntities: detected.entities,
         shouldExecuteAction: false,
       } as any;
+    }
+
+    if (isPastTimeVN(detected.entities.date, detected.entities.timeStart)) {
+      return {
+        kind: "follow_up",
+        intent: detected.name,
+        entities: detected.entities,
+        responseText:
+          "Thời gian bạn nhập đang ở **quá khứ** 😥 Bạn vui lòng gửi yêu cầu lại đúng nhé!.",
+        followUp: {
+          question: "Bạn nhập lại ngày/giờ giúp mình nhé.",
+          field: "date", // hoặc timeStart tùy bạn muốn hỏi cái nào trước
+        },
+        pendingIntent: detected.name,
+        pendingEntities: detected.entities,
+        shouldExecuteAction: false,
+      };
     }
 
     const missing = missingRequiredFields(detected.name, detected.entities);

@@ -59,6 +59,25 @@ export class TaskService {
           channel,
         }));
 
+        const dueDate = new Date(
+          `${entities.date}T${entities.timeStart}:00+07:00`
+        );
+
+        if (isNaN(dueDate.getTime())) {
+          return {
+            success: false,
+            code: "MISSING_INFO",
+            message: "INVALID_DATETIME",
+          };
+        }
+        if (dueDate.getTime() < Date.now()) {
+          return {
+            success: false,
+            code: "PAST_TIME",
+            message: "Deadline này đã ở quá khứ. Bạn nhập lại ngày/giờ nhé.",
+          };
+        }
+
         const reminderDocs = ReminderService.buildForTask({
           userId: entities.userId.toString(),
           taskId: task._id.toString(),

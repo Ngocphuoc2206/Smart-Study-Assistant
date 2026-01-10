@@ -45,7 +45,7 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
         <div className="flex items-center gap-3">
           {/* Dot màu */}
           <span
-            className="h-4 w-4 rounded-full flex-shrink-0"
+            className="h-4 w-4 rounded-full shrink-0"
             style={{ backgroundColor: event.course?.color || '#9ca3af' }}
             title={event.course?.name}
           />

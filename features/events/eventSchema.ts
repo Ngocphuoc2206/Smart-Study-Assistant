@@ -3,7 +3,6 @@ import { z } from "zod";
 
 export const eventFormSchema = z.object({
   type: z.enum(['exam', 'assignment', 'lecture', 'other'], {
-    required_error: "Loại sự kiện là bắt buộc.",
   }),
   title: z.string().min(3, {
     message: "Tiêu đề phải có ít nhất 3 ký tự.",
@@ -13,7 +12,6 @@ export const eventFormSchema = z.object({
   // Chúng ta dùng 'date' (kiểu Date) cho Calendar, 
   // và 'timeStart' (string 'HH:mm') cho Input
   date: z.date({
-    required_error: "Ngày diễn ra là bắt buộc.",
   }),
   timeStart: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, {
     message: "Giờ bắt đầu không hợp lệ (HH:mm)."

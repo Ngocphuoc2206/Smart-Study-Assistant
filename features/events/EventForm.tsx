@@ -43,13 +43,13 @@ import { channel } from "diagnostics_channel";
 // --- Mặc định nhắc nhở (Giữ nguyên) ---
 const defaultReminders = {
   exam: [
-    { offsetSec: -172800, channel: 'inapp' }, // 2 ngày
-    { offsetSec: -86400, channel: 'inapp' },  // 1 ngày
-    { offsetSec: -3600, channel: 'inapp' },   // 1 giờ
+    { offsetSec: -172800, channel: 'inapp' as const }, // 2 ngày
+    { offsetSec: -86400, channel: 'inapp' as const },  // 1 ngày
+    { offsetSec: -3600, channel: 'inapp' as const },   // 1 giờ
   ],
   assignment: [
-    { offsetSec: -86400, channel: 'inapp' }, // 1 ngày
-    { offsetSec: -3600, channel: 'inapp' },  // 1 giờ
+    { offsetSec: -86400, channel: 'inapp' as const }, // 1 ngày
+    { offsetSec: -3600, channel: 'inapp' as const },  // 1 giờ
   ],
   lecture: [],
   other: [],

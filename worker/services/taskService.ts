@@ -66,14 +66,14 @@ export class TaskService {
         if (isNaN(dueDate.getTime())) {
           return {
             success: false,
-            code: "MISSING_INFO",
-            message: "INVALID_DATETIME",
+            code: "INVALID_DATETIME",
+            message: "Thông tin thời gian không hợp lệ",
           };
         }
         if (dueDate.getTime() < Date.now()) {
           return {
             success: false,
-            code: "PAST_TIME",
+            code: "PAST_TIME" as const,
             message: "Deadline này đã ở quá khứ. Bạn nhập lại ngày/giờ nhé.",
           };
         }

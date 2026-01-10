@@ -1,15 +1,45 @@
 /* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Request, Response } from "express";
-import { AuthRequest } from "../middlewares/authMiddleware";
-import { Schedule } from "../models/schedule";
-import { logDebug } from "../../shared/logger";
-import { populate } from "dotenv";
-import { Course } from "../models/course";
-import * as ReminderService from "../services/reminderService";
+
+import type { Response } from "express";
+import type { ParsedQs } from "qs";
 import { Types } from "mongoose";
 
-//Post /schedules
+import { AuthRequest } from "../middlewares/authMiddleware";
+import { Schedule } from "../models/schedule";
+import { Course } from "../models/course";
+import { logDebug } from "../../shared/logger";
+import * as ReminderService from "../services/reminderService";
+
+/**
+ * ✅ Helper: convert Express query param to string safely
+ * Express query can be:
+ *   string | ParsedQs | (string | ParsedQs)[] | undefined
+ */
+function toQueryString(
+  v: string | ParsedQs | (string | ParsedQs)[] | undefined
+): string | undefined {
+  if (typeof v === "string") return v;
+
+  if (Array.isArray(v)) {
+    const first = v[0];
+    return typeof first === "string" ? first : undefined;
+  }
+
+  // ParsedQs object -> ignore
+  return undefined;
+}
+
+/**
+ * ✅ Helper: convert params value to string safely
+ * Some typings may infer params as string | string[]
+ */
+function toParamString(v: string | string[] | undefined): string | undefined {
+  if (!v) return undefined;
+  return Array.isArray(v) ? v[0] : v;
+}
+
+// POST /schedules
 export const createSchedule = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user?.userId) {
@@ -48,9 +78,9 @@ export const createSchedule = async (req: AuthRequest, res: Response) => {
     });
 
     if (existing) {
-      console.log("Duplicate Check: Đã có lịch y hệt trong DB:", { 
-          title: normalizedTitle, 
-          start: normalizedStartTime 
+      console.log("Duplicate Check: Đã có lịch y hệt trong DB:", {
+        title: normalizedTitle,
+        start: normalizedStartTime,
       });
       return res.status(409).json({
         success: false,
@@ -58,13 +88,14 @@ export const createSchedule = async (req: AuthRequest, res: Response) => {
         data: existing,
       });
     }
+
     // ------- KIỂM TRA TRÙNG LẶP THỜI GIAN ------
     const checkStartTime = new Date(startTime);
-    const checkEndTime = endTime 
-      ? new Date(endTime) 
+    const checkEndTime = endTime
+      ? new Date(endTime)
       : new Date(checkStartTime.getTime() + 60 * 60 * 1000); // Mặc định 1 tiếng
 
-    // 2. Query tìm sự kiện bị trùng
+    // Query tìm sự kiện bị trùng
     const overlapSchedule = await Schedule.findOne({
       user: req.user.userId,
       startTime: { $lt: checkEndTime }, // Start của sự kiện cũ < End của sự kiện mới
@@ -74,19 +105,35 @@ export const createSchedule = async (req: AuthRequest, res: Response) => {
     if (overlapSchedule) {
       // Format giờ để hiển thị thông báo lỗi đẹp hơn
       const sTime = new Date(overlapSchedule.startTime);
-      const eTime = overlapSchedule.endTime ? new Date(overlapSchedule.endTime) : null;
-      const timeString = `${sTime.getHours()}:${sTime.getMinutes().toString().padStart(2, '0')}` + 
-                         (eTime ? ` - ${eTime.getHours()}:${eTime.getMinutes().toString().padStart(2, '0')}` : '');
-      console.log(`Overlap Check: Lịch mới đụng độ với lịch cũ ID: ${overlapSchedule._id}`);
+      const eTime = overlapSchedule.endTime
+        ? new Date(overlapSchedule.endTime)
+        : null;
+
+      const timeString =
+        `${sTime.getHours()}:${sTime
+          .getMinutes()
+          .toString()
+          .padStart(2, "0")}` +
+        (eTime
+          ? ` - ${eTime.getHours()}:${eTime
+              .getMinutes()
+              .toString()
+              .padStart(2, "0")}`
+          : "");
+
+      console.log(
+        `Overlap Check: Lịch mới đụng độ với lịch cũ ID: ${overlapSchedule._id}`
+      );
       console.log(`    -> Lịch cũ: "${overlapSchedule.title}" (${timeString})`);
+
       return res.status(409).json({
         success: false,
-        // Trả về message chi tiết để FE hiển thị
         message: `Trùng thời gian với sự kiện: "${overlapSchedule.title}" (${timeString}).`,
-        conflictId: overlapSchedule._id
+        conflictId: overlapSchedule._id,
       });
     }
     // -------
+
     const newSchedule = await Schedule.create({
       user: req.user.userId,
       course,
@@ -99,7 +146,7 @@ export const createSchedule = async (req: AuthRequest, res: Response) => {
       reminders,
     });
 
-    //Create reminder docs
+    // Create reminder docs
     const reminderDocs = ReminderService.buildForSchedule({
       userId: req.user.userId,
       scheduleId: newSchedule._id.toString(),
@@ -107,7 +154,9 @@ export const createSchedule = async (req: AuthRequest, res: Response) => {
       startTime: newSchedule.startTime,
       reminders,
     });
+
     await ReminderService.createMany(reminderDocs as any[]);
+
     console.log(" [BE] Tạo lịch thành công:", newSchedule._id);
     logDebug("New schedule created: ", newSchedule);
 
@@ -118,18 +167,21 @@ export const createSchedule = async (req: AuthRequest, res: Response) => {
     });
   } catch (err: any) {
     console.error("[BE] Lỗi Exception:", err);
+
     if (err?.code === 11000) {
       return res.status(409).json({
         success: false,
         message: "Schedule already exists (duplicate).",
       });
     }
+
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });
   }
 };
+
 // GET /api/schedule
 export const getSchedule = async (req: AuthRequest, res: Response) => {
   try {
@@ -138,12 +190,12 @@ export const getSchedule = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { from, to } = req.query;
-    const userId = req.user?.userId;
+    const fromStr = toQueryString(req.query.from);
+    const toStr = toQueryString(req.query.to);
+    const userId = req.user.userId;
 
-    // By default include schedules owned by the user
+    // Include schedules owned by the user
     // Also include schedules that belong to courses the user is a member of (student) or teaches (teacher)
-    // This lets students see events created by teachers for their courses.
     const courseDocs = await Course.find({
       $or: [{ teacher: userId }, { students: new Types.ObjectId(userId) }],
     })
@@ -153,14 +205,15 @@ export const getSchedule = async (req: AuthRequest, res: Response) => {
     const courseIds = courseDocs.map((d: any) => d._id);
 
     const query: any = { $or: [{ user: userId }] };
+
     if (courseIds.length > 0) {
       query.$or.push({ course: { $in: courseIds } });
     }
 
-    if (from && to) {
+    if (fromStr && toStr) {
       query.startTime = {
-        $gte: new Date(from as string),
-        $lte: new Date(to as string),
+        $gte: new Date(fromStr),
+        $lte: new Date(toStr),
       };
     }
 
@@ -175,6 +228,7 @@ export const getSchedule = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     logDebug("Error fetching schedules: ", error);
+
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -185,15 +239,21 @@ export const getSchedule = async (req: AuthRequest, res: Response) => {
 // PUT /api/schedules/:id
 export const updateSchedule = async (req: AuthRequest, res: Response) => {
   try {
-    // 1. Check Auth
+    // Check Auth
     if (!req.user?.userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { id } = req.params;
+    const id = toParamString((req.params as any).id);
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing schedule id",
+      });
+    }
+
     const updateData = req.body;
 
-    // 2. Find và Update
     const updatedSchedule = await Schedule.findOneAndUpdate(
       { _id: id, user: req.user.userId },
       updateData,
@@ -216,13 +276,15 @@ export const updateSchedule = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     logDebug("Error updating schedule: ", error);
-    if (error.name === "ValidationError") {
+
+    if (error?.name === "ValidationError") {
       return res.status(400).json({
         success: false,
         message: "Validation Error",
         error: error.message,
       });
     }
+
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -233,15 +295,21 @@ export const updateSchedule = async (req: AuthRequest, res: Response) => {
 // DELETE /api/schedules/:id
 export const deleteSchedule = async (req: AuthRequest, res: Response) => {
   try {
-    logDebug("deleteSchedule by id", req.params.id);
-    // 1. Check Auth
+    logDebug("deleteSchedule by id", (req.params as any)?.id);
+
+    // Check Auth
     if (!req.user?.userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { id } = req.params;
+    const id = toParamString((req.params as any).id);
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing schedule id",
+      });
+    }
 
-    // 2. Find and Delete
     const deletedSchedule = await Schedule.findOneAndDelete({
       _id: id,
       user: req.user.userId,
@@ -253,7 +321,8 @@ export const deleteSchedule = async (req: AuthRequest, res: Response) => {
         message: "Schedule not found or unauthorized",
       });
     }
-    //Delete reminder
+
+    // Delete reminder
     await ReminderService.deleteBySchedule(req.user.userId, id);
 
     return res.status(200).json({
@@ -262,6 +331,7 @@ export const deleteSchedule = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     logDebug("Error deleting schedule: ", error);
+
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

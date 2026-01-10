@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { success } from "zod";
 import { VNEntities } from "../../shared/type";
-import { AuthRequest } from "../middlewares/authMiddleware";
 import { Schedule } from "../models/schedule";
 import * as ReminderService from "../services/reminderService";
 
@@ -10,7 +8,7 @@ export class ScheduleService {
     if (!entities.userId) {
       return {
         success: false,
-        code: "MISSING_USER",
+        code: "MISSING_USER" as const,
         message: "Missing userId",
       };
     }
@@ -43,8 +41,8 @@ export class ScheduleService {
         if (isNaN(startTime.getTime())) {
           return {
             success: false,
-            code: "MISSING_INFO",
-            message: "INVALID_DATETIME",
+            code: "INVALID_DATETIME" as const,
+            message: "Thời gian không hợp lệ.",
           };
         }
 
@@ -52,7 +50,7 @@ export class ScheduleService {
         if (startTime.getTime() < now.getTime()) {
           return {
             success: false,
-            code: "PAST_TIME",
+            code: "PAST_TIME" as const,
             message:
               "Thời gian bạn nhập đã ở quá khứ. Bạn nhập lại giúp mình nhé.",
           };
@@ -89,14 +87,14 @@ export class ScheduleService {
       if (error?.code === 11000) {
         return {
           success: false,
-          code: "DUPLICATE_SCHEDULE",
+          code: "DUPLICATE_SCHEDULE" as const,
           message: "Lịch này đã tồn tại (bị trùng).",
         };
       }
 
       return {
         success: false,
-        code: "SCHEDULE_CREATE_FAILED",
+        code: "SCHEDULE_CREATE_FAILED" as const,
         message: "Tạo lịch thất bại. Vui lòng thử lại.",
       };
     }

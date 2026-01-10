@@ -4,16 +4,15 @@ import React, { useState, useMemo } from "react";
 import { StudyEvent } from "@/lib/types";
 import { formatEventTime } from "@/lib/utils";
 import { useEvents } from "@/lib/hooks/useEvents"; // Hook từ P1
-import { 
-  endOfMonth, 
-  endOfWeek, 
-  startOfMonth, 
-  startOfToday, 
-  startOfWeek, 
-  format 
+import {
+  endOfMonth,
+  endOfWeek,
+  startOfMonth,
+  startOfToday,
+  startOfWeek,
+  format,
 } from "date-fns";
 import { vi } from "date-fns/locale";
-import { DayContentProps } from "react-day-picker";
 
 // Import UI
 import { Calendar } from "@/components/ui/calendar";
@@ -23,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // ✨ Import component WeekView mới
-import { WeekView } from "./WeekView"; 
+import { WeekView } from "./WeekView";
 
 // Helper lấy khoảng thời gian (giữ nguyên)
 const getWeekRange = (date: Date) => ({
@@ -38,12 +37,16 @@ const getMonthRange = (date: Date) => ({
 export function CalendarWidget() {
   const [view, setView] = useState<"month" | "week">("month");
   // 'currentDate' giờ đây là ngày đại diện cho tháng (view=month) hoặc tuần (view=week)
-  const [currentDate, setCurrentDate] = useState(new Date()); 
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(startOfToday());
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    startOfToday()
+  );
 
   // Xác định khoảng thời gian query dựa trên view
   const range = useMemo(() => {
-    return view === 'month' ? getMonthRange(currentDate) : getWeekRange(currentDate);
+    return view === "month"
+      ? getMonthRange(currentDate)
+      : getWeekRange(currentDate);
   }, [view, currentDate]);
 
   // Hook 'useEvents' (từ P1) sẽ tự động fetch lại khi 'range' thay đổi
@@ -54,30 +57,28 @@ export function CalendarWidget() {
     if (!selectedDate || !events) return [];
     const selectedISO = format(selectedDate, "yyyy-MM-dd");
     // Lọc từ 'events' (đã là dữ liệu của tuần hoặc tháng)
-    return events.filter(e => e.date === selectedISO);
+    return events.filter((e: { date: string }) => e.date === selectedISO);
   }, [selectedDate, events]);
 
   // Xử lý khi đổi tháng/tuần trên lịch
   const handleDateChange = (date: Date) => {
     setCurrentDate(date);
     // Tự động chọn ngày đầu tiên của view mới
-    if (view === 'month') {
+    if (view === "month") {
       setSelectedDate(startOfMonth(date));
     } else {
       setSelectedDate(startOfWeek(date, { locale: vi }));
     }
   };
-  
+
   // Xử lý khi chỉ đổi ngày chọn
   const handleSelectDate = (date: Date | undefined) => {
-      if(date) {
-        setSelectedDate(date);
-      }
+    if (date) {
+      setSelectedDate(date);
+    }
   };
 
   // --- Component Lịch Tháng ---
-  // (Chúng ta sẽ tắt 'DayWithDot' vì nó gây nhầm lẫn khi
-  // 'events' không chứa đủ dữ liệu của cả tháng)
   const calendarMonthView = (
     <Calendar
       mode="single"
@@ -90,8 +91,7 @@ export function CalendarWidget() {
       // components={{ DayContent: DayWithDot }} // Tắt để tránh lỗi logic
     />
   );
-  
-  // --- Component Lịch Tuần (Mới) ---
+
   const calendarWeekView = (
     <WeekView
       currentDate={currentDate}
@@ -105,37 +105,44 @@ export function CalendarWidget() {
   return (
     <Card>
       <CardContent className="p-4 md:p-6">
-        <Tabs value={view} onValueChange={(v) => setView(v as "month" | "week")}>
+        <Tabs
+          value={view}
+          onValueChange={(v) => setView(v as "month" | "week")}
+        >
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="month">Lịch tháng</TabsTrigger>
             <TabsTrigger value="week">Lịch tuần</TabsTrigger>
           </TabsList>
-          
-          {/* ✨ Tự động đổi giao diện dựa trên tab */}
+
           {isLoading && <Skeleton className="h-[300px] w-full" />}
-          {!isLoading && view === 'month' ? calendarMonthView : null}
-          {!isLoading && view === 'week' ? calendarWeekView : null}
+          {!isLoading && view === "month" ? calendarMonthView : null}
+          {!isLoading && view === "week" ? calendarWeekView : null}
         </Tabs>
-        
+
         {/* Danh sách sự kiện cho ngày đã chọn (phần này giữ nguyên) */}
         <div className="mt-4 border-t pt-4">
           <h4 className="font-semibold mb-3">
-            Sự kiện ngày {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: vi }) : '...'}
+            Sự kiện ngày{" "}
+            {selectedDate
+              ? format(selectedDate, "dd/MM/yyyy", { locale: vi })
+              : "..."}
           </h4>
-          
+
           {isLoading && <Skeleton className="h-10 w-full" />}
-          
+
           {isError && (
             <p className="text-sm text-destructive">Lỗi khi tải sự kiện.</p>
           )}
 
           {!isLoading && !isError && eventsForSelectedDay.length === 0 && (
-            <p className="text-sm text-muted-foreground">Không có sự kiện nào.</p>
+            <p className="text-sm text-muted-foreground">
+              Không có sự kiện nào.
+            </p>
           )}
 
           {!isLoading && !isError && eventsForSelectedDay.length > 0 && (
             <ul className="space-y-2">
-              {eventsForSelectedDay.map(event => (
+              {eventsForSelectedDay.map((event: any) => (
                 <EventRow key={event.id} event={event} />
               ))}
             </ul>
@@ -148,30 +155,36 @@ export function CalendarWidget() {
 
 // Component phụ cho item bên dưới Calendar (giữ nguyên)
 function EventRow({ event }: { event: StudyEvent }) {
-   return (
+  return (
     <li className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted cursor-pointer">
       {event.course && (
         <span
-          className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+          className="h-2.5 w-2.5 rounded-full shrink-0"
           style={{ backgroundColor: event.course.color }}
         />
       )}
-      {!event.course && <span className="h-2.5 w-2.5 rounded-full bg-gray-400 flex-shrink-0" />}
+      {!event.course && (
+        <span className="h-2.5 w-2.5 rounded-full bg-gray-400 shrink-0" />
+      )}
 
       <div className="flex-1">
         <p className="font-medium text-sm leading-tight">{event.title}</p>
         <p className="text-xs text-muted-foreground">
           {formatEventTime(event.timeStart)}
-          {event.timeEnd ? ` - ${formatEventTime(event.timeEnd)}` : ''}
-          {event.location ? ` @ ${event.location}` : ''}
+          {event.timeEnd ? ` - ${formatEventTime(event.timeEnd)}` : ""}
+          {event.location ? ` @ ${event.location}` : ""}
         </p>
       </div>
-      <Badge 
-        variant={event.type === 'exam' ? 'destructive' : 'secondary'} 
+      <Badge
+        variant={event.type === "exam" ? "destructive" : "secondary"}
         className="capitalize h-5 text-xs px-1.5"
       >
-         {event.type === 'assignment' ? 'Bài tập' : event.type === 'exam' ? 'Thi' : 'Khác'}
+        {event.type === "assignment"
+          ? "Bài tập"
+          : event.type === "exam"
+          ? "Thi"
+          : "Khác"}
       </Badge>
     </li>
-   );
+  );
 }

@@ -25,7 +25,7 @@ export function QuickActions({
   // --- Logic hiển thị nút dựa trên vai trò ---
 
   // 1. Dành cho Sinh viên (hoặc nếu không xác định được)
-  if (role === 'student' || !role) {
+  if (role === "student" || !role) {
     return (
       <Card>
         <CardHeader>
@@ -47,8 +47,8 @@ export function QuickActions({
   }
 
   // 2. Dành cho Giảng viên
-  if (role === 'lecturer') {
-     return (
+  if (role === "teacher") {
+    return (
       <Card>
         <CardHeader>
           <CardTitle>Bắt đầu nhanh</CardTitle>
@@ -71,7 +71,7 @@ export function QuickActions({
       </Card>
     );
   }
-  
+
   // 3. Admin (hoặc vai trò khác) sẽ không thấy gì
   return null;
 }

@@ -104,7 +104,7 @@ export default function CourseGrid() {
     // 2. Sắp xếp
     filtered.sort((a, b) => {
       if (sort === "event_desc") {
-        return b.eventCount - a.eventCount;
+       return (b.eventCount ?? 0) - (a.eventCount ?? 0);
       }
       return a.name.localeCompare(b.name); // name_asc
     });
@@ -114,7 +114,12 @@ export default function CourseGrid() {
 
   // --- Handlers ---
   const handleAddSubmit = (data: CourseFormValues) => {
-    createMutation.mutate(data, {
+    const payload = {
+      ...data,
+      teacherId: currentUserId, // Bổ sung teacherId (nếu API cần)
+      code: data.code ?? "",    // Đảm bảo code không bị undefined
+    };
+    createMutation.mutate(payload as any, {
       onSuccess: () => {
         setIsAddOpen(false);
         refetch();

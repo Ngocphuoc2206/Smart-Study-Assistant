@@ -434,40 +434,60 @@ export const NLPService = {
     };
 
     try {
-      const translatedText = mapVietnameseDateToEnglish(text);
+      let cleanText = text.normalize("NFC");
+
+      const reminderRegex =
+        /\bnhắc(?:\s*nhở)?\b[\s\S]{0,80}?\b(?:trước|truoc)\b[\s\S]{0,40}?(?:(\d{1,2})\s*[:h]\s*(\d{2})|(\d+))\s*(phút|phut|giờ|gio|tiếng|tieng|ngày|ngay|tuần|tuan)?\b/iu;
+
+      const reminderMatch = cleanText.match(reminderRegex);
+
+      logDebug("[Reminder Debug] cleanText:", cleanText);
+      logDebug("[Reminder Debug] reminderMatch:", reminderMatch);
+
+      if (reminderMatch) {
+        let seconds = 0;
+
+        // Case A: HH:MM or HhMM
+        if (reminderMatch[1] && reminderMatch[2]) {
+          const hh = parseInt(reminderMatch[1], 10);
+          const mm = parseInt(reminderMatch[2], 10);
+
+          seconds = hh * 3600 + mm * 60;
+        }
+        // Case B: number + unit
+        else if (reminderMatch[3]) {
+          const amount = parseInt(reminderMatch[3], 10);
+          const unit = (reminderMatch[4] || "giờ")
+            .toLowerCase()
+            .normalize("NFC");
+
+          if (unit.includes("phút") || unit.includes("phut"))
+            seconds = amount * 60;
+          else if (
+            unit.includes("giờ") ||
+            unit.includes("gio") ||
+            unit.includes("tiếng") ||
+            unit.includes("tieng")
+          )
+            seconds = amount * 3600;
+          else if (unit.includes("tuần") || unit.includes("tuan"))
+            seconds = amount * 604800;
+          else seconds = amount * 86400;
+        }
+
+        if (seconds > 0) {
+          entities.reminderOffset = -seconds;
+        }
+
+        // remove reminder phrase
+        cleanText = cleanText.replace(reminderMatch[0], " ");
+      }
+
+      const translatedText = mapVietnameseDateToEnglish(cleanText);
       logDebug("[NLPService] Translated Text:", translatedText);
 
       const refDate = getVietnamRefDate();
       const parsedDates = chrono.parse(translatedText, refDate);
-
-      let cleanText = text;
-      logDebug("[NLPService] Parsed Dates:", parsedDates);
-      //Handling Reminders
-      //Handling Reminders
-      const reminderRegex =
-        /\bnhắc(?:\s*nhở)?\b[^0-9]{0,40}?\b(?:trước|truoc)\b[^0-9]{0,20}?(\d+)\s*(phút|giờ|gio|tiếng|tieng|ngày|ngay)\b/iu;
-
-      const reminderMatch = cleanText.match(reminderRegex);
-      if (reminderMatch) {
-        const amount = parseInt(reminderMatch[1], 10);
-        const unit = reminderMatch[2].toLowerCase();
-        let seconds = 0;
-
-        if (unit.includes("phút")) seconds = amount * 60;
-        else if (
-          unit.includes("giờ") ||
-          unit.includes("gio") ||
-          unit.includes("tiếng") ||
-          unit.includes("tieng")
-        )
-          seconds = amount * 3600;
-        else seconds = amount * 86400;
-
-        entities.reminderOffset = -seconds;
-
-        // remove matched segment
-        cleanText = cleanText.replace(reminderMatch[0], " ");
-      }
       if (parsedDates.length > 0) {
         let datePart: Date | null = null;
         let timePart: Date | null = null;
@@ -491,12 +511,7 @@ export const NLPService = {
             datePart = d;
           }
 
-          if (
-            txt.includes("at ") ||
-            txt.includes(":") ||
-            txt.includes("am") ||
-            txt.includes("pm")
-          ) {
+          if (txt.includes("at ") || /\b(am|pm)\b/.test(txt)) {
             timePart = d;
           }
         }

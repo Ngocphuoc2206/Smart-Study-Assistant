@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
 import { Course } from "@/lib/types";
-
+export type { CourseFormValues };
 // Các màu gợi ý
 const COLOR_SWATCHES = [
   '#ef4444', // red

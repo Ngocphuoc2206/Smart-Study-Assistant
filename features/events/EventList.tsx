@@ -8,7 +8,13 @@ import { useReminders } from "@/lib/hooks/useReminders";
 import { EventCard } from "./EventCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -34,25 +40,47 @@ import { StudyEvent } from "@/lib/types";
 // Import hook Sửa/Xóa
 import { useDeleteEventMutation } from "@/lib/hooks/useEventMutations";
 import { useDebounce } from "use-debounce";
-import { addMonths, endOfToday, startOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import {
+  addMonths,
+  endOfToday,
+  startOfToday,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  parseISO,
+} from "date-fns";
 import { vi } from "date-fns/locale";
 import { AlertCircle, Loader2, Search, CalendarOff } from "lucide-react";
 
 // Định nghĩa các dải ngày
 const dateRanges = {
-  'today': { from: startOfToday(), to: endOfToday(), label: "Hôm nay" },
-  'this_week': { from: startOfWeek(new Date(), { locale: vi }), to: endOfWeek(new Date(), { locale: vi }), label: "Tuần này" },
-  'this_month': { from: startOfMonth(new Date()), to: endOfMonth(new Date()), label: "Tháng này" },
-  'next_month': { from: startOfMonth(addMonths(new Date(), 1)), to: endOfMonth(addMonths(new Date(), 1)), label: "Tháng sau" },
+  today: { from: startOfToday(), to: endOfToday(), label: "Hôm nay" },
+  this_week: {
+    from: startOfWeek(new Date(), { locale: vi }),
+    to: endOfWeek(new Date(), { locale: vi }),
+    label: "Tuần này",
+  },
+  this_month: {
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+    label: "Tháng này",
+  },
+  next_month: {
+    from: startOfMonth(addMonths(new Date(), 1)),
+    to: endOfMonth(addMonths(new Date(), 1)),
+    label: "Tháng sau",
+  },
 };
 
 export default function EventList() {
   // --- State cho Bộ lọc (Yêu cầu 1) ---
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch] = useDebounce(searchTerm, 500); 
-  const [rangeKey, setRangeKey] = useState<keyof typeof dateRanges>('this_month');
-  const [type, setType] = useState<EventFilters['type']>('all');
-  const [sort, setSort] = useState<EventFilters['sort']>('asc');
+  const [debouncedSearch] = useDebounce(searchTerm, 500);
+  const [rangeKey, setRangeKey] =
+    useState<keyof typeof dateRanges>("this_month");
+  const [type, setType] = useState<EventFilters["type"]>("all");
+  const [sort, setSort] = useState<EventFilters["sort"]>("asc");
 
   // --- Lấy dữ liệu (Yêu cầu 4: Phân trang) ---
   const filters: EventFilters = {
@@ -87,12 +115,12 @@ export default function EventList() {
     setSelectedEvent(event);
     setIsEditOpen(true);
   };
-  
+
   const handleDeleteClick = (event: StudyEvent) => {
     setSelectedEvent(event);
     setIsDeleteOpen(true);
   };
-  
+
   const confirmDelete = () => {
     if (selectedEvent) {
       deleteMutation.mutate(selectedEvent.id, {
@@ -102,39 +130,43 @@ export default function EventList() {
   };
 
   // Hàm helper: Chuyển StudyEvent sang EventFormValues (cho defaultValues)
-  const getFormValues = (event: StudyEvent | null): Partial<EventFormValues> | undefined => {
-      if (!event) return undefined;
-      return {
-          ...event,
-          // Chuyển '2025-10-25' (string) sang Date object
-          date: parseISO(event.date), 
-          notes: event.notes,
-          reminders: event.reminders || []
-      };
+  const getFormValues = (
+    event: StudyEvent | null
+  ): Partial<EventFormValues> | undefined => {
+    if (!event) return undefined;
+    return {
+      ...event,
+      // Chuyển '2025-10-25' (string) sang Date object
+      date: parseISO(event.date),
+      notes: event.notes,
+      reminders: event.reminders || [],
+    };
   };
 
   const eventsWithReminders = useMemo(() => {
-    const rawEvents = data?.pages.flatMap(page => page.data) || [];
+    const rawEvents = data?.pages.flatMap((page) => page.data) || [];
 
-    
     const safeReminders = Array.isArray(allReminders) ? allReminders : [];
 
-    return rawEvents.map(event => {
-  
+    return rawEvents.map((event) => {
       const myReminders = safeReminders.filter((r: any) => {
-      
-        const scheduleId = typeof r.schedule === 'string' ? r.schedule : r.schedule?._id;
-        return scheduleId?.toString() === event.id?.toString();//event
+        const scheduleId =
+          typeof r.schedule === "string" ? r.schedule : r.schedule?._id;
+        return scheduleId?.toString() === event.id?.toString(); //event
       });
 
       const mappedReminders = myReminders.map((r: any) => ({
-         offsetSec: (new Date(r.remindAt).getTime() - new Date(`${event.date}T${event.timeStart}`).getTime()) / 1000,
-         channel: r.channel === 'In-app' ? 'inapp' : 'email'
+        offsetSec:
+          (new Date(r.remindAt).getTime() -
+            new Date(`${event.date}T${event.timeStart}`).getTime()) /
+          1000,
+        channel: r.channel === "In-app" ? "inapp" : "email",
       }));
 
       return {
         ...event,
-        reminders: mappedReminders.length > 0 ? mappedReminders : event.reminders,
+        reminders:
+          mappedReminders.length > 0 ? mappedReminders : event.reminders,
       };
     });
   }, [data, allReminders]);
@@ -145,7 +177,9 @@ export default function EventList() {
     if (isLoading) {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-[200px] w-full" />)}
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-[200px] w-full" />
+          ))}
         </div>
       );
     }
@@ -160,7 +194,7 @@ export default function EventList() {
         </Alert>
       );
     }
-    
+
     const allEvents = eventsWithReminders;
 
     // 3. Trống (Yêu cầu 3)
@@ -177,7 +211,7 @@ export default function EventList() {
     // 4. Có dữ liệu
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {allEvents.map(event => (
+        {allEvents.map((event) => (
           <EventCard
             key={event.id}
             event={event}
@@ -195,8 +229,8 @@ export default function EventList() {
       <div className="flex flex-col md:flex-row gap-2 p-4 border rounded-lg bg-card">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Tìm theo tiêu đề, môn học..." 
+          <Input
+            placeholder="Tìm theo tiêu đề, môn học..."
             className="pl-9"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -210,11 +244,13 @@ export default function EventList() {
             </SelectTrigger>
             <SelectContent>
               {Object.entries(dateRanges).map(([key, { label }]) => (
-                <SelectItem key={key} value={key}>{label}</SelectItem>
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          
+
           {/* Lọc theo Loại */}
           <Select value={type} onValueChange={(v) => setType(v as any)}>
             <SelectTrigger className="w-full md:w-[130px]">
@@ -228,7 +264,7 @@ export default function EventList() {
               <SelectItem value="other">Khác</SelectItem>
             </SelectContent>
           </Select>
-          
+
           {/* Sắp xếp */}
           <Select value={sort} onValueChange={(v) => setSort(v as any)}>
             <SelectTrigger className="w-full md:w-[120px]">
@@ -245,7 +281,7 @@ export default function EventList() {
       {/* Danh sách */}
       <div className="space-y-4">
         {renderContent()}
-        
+
         {/* Nút Load More (Yêu cầu 4) */}
         {hasNextPage && (
           <div className="text-center">
@@ -253,7 +289,9 @@ export default function EventList() {
               onClick={() => fetchNextPage()}
               disabled={isFetchingNextPage}
             >
-              {isFetchingNextPage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isFetchingNextPage && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Tải thêm
             </Button>
           </div>
@@ -267,7 +305,7 @@ export default function EventList() {
             <DialogTitle>Sửa sự kiện</DialogTitle>
           </DialogHeader>
           {/* Render Form với đúng props */}
-          <EventForm 
+          <EventForm
             key={selectedEvent?.id} // Dùng key để reset form
             existingEventId={selectedEvent?.id}
             defaultValues={getFormValues(selectedEvent)}
@@ -275,21 +313,21 @@ export default function EventList() {
           />
         </DialogContent>
       </Dialog>
-      
+
       {/* Dialog Xóa Sự kiện */}
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
             <AlertDialogDescription>
-              Sự kiện "{selectedEvent?.title}" sẽ bị xóa vĩnh viễn. 
+              Sự kiện &quot;{selectedEvent?.title}&quot; sẽ bị xóa vĩnh viễn.
               Hành động này không thể hoàn tác.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete} 
+            <AlertDialogAction
+              onClick={confirmDelete}
               disabled={deleteMutation.isPending}
               className="bg-destructive hover:bg-destructive/90"
             >

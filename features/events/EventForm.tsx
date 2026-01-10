@@ -6,7 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { EventFormValues, eventFormSchema } from "./eventSchema";
 // Import cả 2 hook TẠO và SỬA
-import { useCreateEventMutation, useUpdateEventMutation } from "@/lib/hooks/useEventMutations"; 
+import {
+  useCreateEventMutation,
+  useUpdateEventMutation,
+} from "@/lib/hooks/useEventMutations";
 import { useCourses } from "@/lib/hooks/useCourses";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -24,8 +27,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea"; 
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -39,17 +46,16 @@ import { cn } from "@/lib/utils";
 import { ReminderEditor } from "./ReminderEditor";
 import { channel } from "diagnostics_channel";
 
-
 // --- Mặc định nhắc nhở (Giữ nguyên) ---
 const defaultReminders = {
   exam: [
-    { offsetSec: -172800, channel: 'inapp' }, // 2 ngày
-    { offsetSec: -86400, channel: 'inapp' },  // 1 ngày
-    { offsetSec: -3600, channel: 'inapp' },   // 1 giờ
+    { offsetSec: -172800, channel: "inapp" as const }, // 2 ngày
+    { offsetSec: -86400, channel: "inapp" as const }, // 1 ngày
+    { offsetSec: -3600, channel: "inapp" as const }, // 1 giờ
   ],
   assignment: [
-    { offsetSec: -86400, channel: 'inapp' }, // 1 ngày
-    { offsetSec: -3600, channel: 'inapp' },  // 1 giờ
+    { offsetSec: -86400, channel: "inapp" as const }, // 1 ngày
+    { offsetSec: -3600, channel: "inapp" as const }, // 1 giờ
   ],
   lecture: [],
   other: [],
@@ -58,34 +64,44 @@ const defaultReminders = {
 interface EventFormProps {
   defaultValues?: Partial<EventFormValues>;
   // Prop này để nhận ID sự kiện (nếu là form Sửa)
-  existingEventId?: string; 
+  existingEventId?: string;
   // Callback khi submit thành công (để đóng dialog/chuyển trang)
-  onSuccess?: () => void; 
+  onSuccess?: () => void;
 }
 
-export default function EventForm({ defaultValues, existingEventId, onSuccess }: EventFormProps) {
+export default function EventForm({
+  defaultValues,
+  existingEventId,
+  onSuccess,
+}: EventFormProps) {
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       ...defaultValues,
       // Cập nhật logic reminders: ưu tiên defaultValues, sau đó là type
-      reminders: defaultValues?.reminders 
-        ? defaultValues.reminders 
-        : (defaultValues?.type ? defaultReminders[defaultValues.type] : []),
+      reminders: defaultValues?.reminders
+        ? defaultValues.reminders
+        : defaultValues?.type
+        ? defaultReminders[defaultValues.type]
+        : [],
     },
   });
 
   // Khởi tạo cả 2 mutations
   const createMutation = useCreateEventMutation();
   const updateMutation = useUpdateEventMutation();
-  
+
   const { data: courses, isLoading: isLoadingCourses } = useCourses();
 
   // Watch 'type' để cập nhật nhắc nhở mặc định
   const eventType = form.watch("type");
   useEffect(() => {
     // Chỉ set default nếu user chưa tự set
-    if (eventType && !form.getValues("reminders")?.length && !defaultValues?.reminders?.length) {
+    if (
+      eventType &&
+      !form.getValues("reminders")?.length &&
+      !defaultValues?.reminders?.length
+    ) {
       form.setValue("reminders", defaultReminders[eventType]);
     }
   }, [eventType, form, defaultValues]);
@@ -103,13 +119,15 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
       location: data.location,
       notes: data.notes, // Gửi notes
     };
-    
-    const reminders = data.reminders?.map(r =>({ offsetSec: r.offsetSec, channel: r.channel }));
+
+    const reminders = data.reminders?.map((r) => ({
+      offsetSec: r.offsetSec,
+      channel: r.channel,
+    }));
 
     // Kiểm tra xem đây là TẠO MỚI hay CẬP NHẬT
     if (existingEventId) {
       // --- Logic SỬA ---
-      // @ts-ignore // Bỏ qua lỗi type (vì eventData không đầy đủ 100% StudyEvent)
       updateMutation.mutate(
         { id: existingEventId, data: eventData, reminders },
         {
@@ -136,7 +154,7 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
       );
     }
   };
-  
+
   // Kiểm tra trạng thái loading của cả 2
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
@@ -151,7 +169,10 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
             <FormItem>
               <FormLabel>Tiêu đề sự kiện *</FormLabel>
               <FormControl>
-                <Input placeholder="Ví dụ: Thi cuối kỳ Trí tuệ nhân tạo" {...field} />
+                <Input
+                  placeholder="Ví dụ: Thi cuối kỳ Trí tuệ nhân tạo"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -166,7 +187,10 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Loại *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Chọn loại sự kiện..." />
@@ -174,7 +198,9 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="exam">Kỳ thi</SelectItem>
-                    <SelectItem value="assignment">Bài tập / Deadline</SelectItem>
+                    <SelectItem value="assignment">
+                      Bài tập / Deadline
+                    </SelectItem>
                     <SelectItem value="lecture">Buổi học</SelectItem>
                     <SelectItem value="other">Khác</SelectItem>
                   </SelectContent>
@@ -191,19 +217,29 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Môn học (Tùy chọn)</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder={isLoadingCourses ? "Đang tải..." : "Chọn môn học..."} />
+                      <SelectValue
+                        placeholder={
+                          isLoadingCourses ? "Đang tải..." : "Chọn môn học..."
+                        }
+                      />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {courses?.map(course => (
+                    {courses?.map((course) => (
                       <SelectItem key={course.id} value={course.id}>
-                         <span className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: course.color }} />
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: course.color }}
+                          />
                           {course.name}
-                         </span>
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -283,7 +319,7 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
             )}
           />
         </div>
-        
+
         {/* Địa điểm */}
         <FormField
           control={form.control}
@@ -307,17 +343,17 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
             <FormItem>
               <FormLabel>Ghi chú</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Ghi chú thêm về sự kiện..." 
-                  className="resize-none" 
-                  {...field} 
+                <Textarea
+                  placeholder="Ghi chú thêm về sự kiện..."
+                  className="resize-none"
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         {/* Nhắc nhở */}
         {/*<FormField
           control={form.control}
@@ -335,13 +371,14 @@ export default function EventForm({ defaultValues, existingEventId, onSuccess }:
           )}
         />*/}
 
-        <Button 
-          type="submit" 
-          disabled={isLoading}
-        >
+        <Button type="submit" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {/* Tên nút thay đổi động */}
-          {isLoading ? "Đang lưu..." : (existingEventId ? "Cập nhật sự kiện" : "Lưu sự kiện")}
+          {isLoading
+            ? "Đang lưu..."
+            : existingEventId
+            ? "Cập nhật sự kiện"
+            : "Lưu sự kiện"}
         </Button>
       </form>
     </Form>

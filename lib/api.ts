@@ -1,8 +1,14 @@
 // lib/api.ts
 import axios from "axios";
 import { useAuthStore } from "./hooks/useAuthStore";
+
+const baseURL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000/api";
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api",
+  baseURL,
   withCredentials: true, // include cookies for session auth
   headers: {
     "Content-Type": "application/json",

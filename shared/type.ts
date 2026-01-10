@@ -1,19 +1,21 @@
 import { ObjectId } from "mongoose";
 export type ActionCode =
-  | "DUPLICATE_SCHEDULE"
-  | "DUPLICATE_TASK"
-  | "MISSING_INFO"
   | "SCHEDULE_CREATE_FAILED"
   | "TASK_CREATE_FAILED"
   | "UNSUPPORTED"
-  | "UNKNOWN";
+  | "UNKNOWN"
+  | "PAST_TIME"
+  | "MISSING_USER"
+  | "MISSING_INFO"
+  | "INVALID_DATETIME"
+  | "DUPLICATE_TASK"
+  | "DUPLICATE_SCHEDULE";
 
-export type ActionResult<T> = {
+export type ActionResult<T = any> = {
   success: boolean;
-  message?: string;
+  message: string;
   code?: ActionCode;
-  created?: T; // schedule/task created
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  created?: T;
   preview?: any;
 };
 
